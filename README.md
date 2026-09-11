@@ -22,15 +22,25 @@ scripts/setup-env.sh
 # 2. Deps
 pnpm install
 
-# 3. Headless emulator (KVM-accelerated, runs in Docker)
-scripts/emu.sh up && scripts/emu.sh wait
+# 3. Full dev loop (all toolchain env wrapped — no manual exports)
+scripts/dev.sh up        # start headless emulator, wait for boot
+scripts/dev.sh install   # build + install the dev-client APK
+scripts/dev.sh start     # Metro on 8081 (leave running)
+# in another terminal:
+scripts/dev.sh open      # launch the app on the emulator
 
-# 4. Metro + app
-pnpm start            # then press 'a' to open on the emulator
+# Desktop mirroring (optional — scrcpy lives in a COPR, not mainline Fedora):
+sudo dnf copr enable zeno/scrcpy && sudo dnf install scrcpy
+scrcpy -s emulator-5554
 
 # Quality gates (same as CI)
 pnpm typecheck && pnpm lint && pnpm format:check && pnpm test
 ```
+
+> **First launch of a fresh dev-client build** shows the Expo dev launcher:
+> enter `10.0.2.2:8081` and tap Connect (or pick the auto-discovered
+> `http://<LAN-IP>:8081` server), then tap **Go home** on the dev menu that
+> appears. The app reconnects automatically on later launches.
 
 ## Layout
 

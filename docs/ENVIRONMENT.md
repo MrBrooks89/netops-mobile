@@ -40,6 +40,8 @@ Test AVD: `netops-test` — Pixel 7 profile, Android 16 (API 36), google_apis/x8
 
 ## Env vars for any manual shell work
 
+Prefer `scripts/dev.sh` (below), which exports all of these for you. Manually:
+
 ```bash
 export JAVA_HOME=$PWD/.tools/opt/jdk-21.0.9+10
 export ANDROID_HOME=$PWD/.tools/android-sdk
@@ -47,6 +49,38 @@ export PATH=$JAVA_HOME/bin:$ANDROID_HOME/platform-tools:$PATH
 export HOME=$PWD/.tools/home           # sandbox-safe; AVD + adb keys live here
 export DOCKER_CONFIG=$PWD/.tools/docker-config
 ```
+
+## scripts/dev.sh — one-command dev loop
+
+Wraps all toolchain env (no manual exports ever needed):
+
+```bash
+scripts/dev.sh up        # start emulator (docker, KVM) and wait for boot
+scripts/dev.sh install   # gradle assembleDebug + adb install
+scripts/dev.sh start     # Metro on 8081 (foreground; Ctrl+C to stop)
+scripts/dev.sh open      # (re)launch the app on the emulator
+scripts/dev.sh stop      # stop emulator
+scripts/dev.sh status    # what's running
+scripts/dev.sh shell     # bash with all env exported
+```
+
+First launch after installing a fresh dev-client build shows the **dev
+launcher** screen. Connect it to Metro: type `10.0.2.2:8081` in the URL field
+and tap Connect (or pick the auto-discovered `http://<your-LAN-IP>:8081` entry).
+The first bundle load also pops the Expo dev menu — tap **Go home** to see the
+app. Thereafter the app reconnects to the last server automatically.
+
+## Viewing the emulator screen (scrcpy)
+
+scrcpy is **not in mainline Fedora repos** — it lives in the `zeno/scrcpy` COPR:
+
+```bash
+sudo dnf copr enable zeno/scrcpy
+sudo dnf install scrcpy
+scrcpy -s emulator-5554
+```
+
+(Hit `Ctrl+h` in the scrcpy window to send HOME, right-click = BACK.)
 
 ## Notes
 

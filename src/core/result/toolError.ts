@@ -12,6 +12,7 @@
 
 export type ToolErrorCode =
   | 'INVALID_INPUT'
+  | 'NOT_FOUND'
   | 'NETWORK_UNREACHABLE'
   | 'DNS_FAILURE'
   | 'TIMEOUT'
@@ -54,6 +55,7 @@ export const toolError = (
 
 const DEFAULT_RETRYABLE: Record<ToolErrorCode, boolean> = {
   INVALID_INPUT: false,
+  NOT_FOUND: false,
   NETWORK_UNREACHABLE: true,
   DNS_FAILURE: true,
   TIMEOUT: true,

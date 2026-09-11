@@ -46,7 +46,13 @@ case "$cmd" in
     rm -f "$AVD_HOME"/netops-test.avd/*.lock 2>/dev/null || true
     # --network host: host adb sees the emulator on localhost:5554/5555 and
     # the emulator reaches host Metro via the standard 10.0.2.2 alias.
+    # --user: run as the invoking user. As root the emulator writes
+    #   root/nobody-owned files into the mounted AVD directory, which the host
+    #   user then cannot read (breaks `prettier --check`) or delete without
+    #   sudo. HOME has to move somewhere writable for the same reason.
     docker run -d --name "$NAME" \
+      --user "$(id -u):$(id -g)" \
+      -e HOME=/tmp/emu-home \
       --device /dev/kvm --device /dev/dri \
       --network host \
       -v "$SDK":/opt/android-sdk \

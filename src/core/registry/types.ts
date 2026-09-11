@@ -7,12 +7,13 @@
  *
  * Freeze rule (plan D15): this shape is the contract — change it only via
  * an ADR, because churn here touches every tool.
+ *
+ * CIDR value objects and prefix↔mask math live in src/core/ip/cidr.ts
+ * (shared by every calculator); they are re-exported below so registry
+ * consumers keep a single import site.
  */
 
 import type { ComponentType } from 'react';
-import { parseIp, parseV4, type IpAddress } from '../ip/ip';
-import { err, ok, type Result } from '../result/result';
-import { toolError } from '../result/toolError';
 
 export const TOOL_CATEGORIES = [
   'ipv4',
@@ -85,88 +86,18 @@ export interface ToolModule {
 }
 
 // ---------------------------------------------------------------------------
-// Shared value objects used across tools (pure data, no behaviour)
+// Convenience re-exports for registry consumers
 // ---------------------------------------------------------------------------
 
-/** A network in CIDR notation, family-aware. */
-export interface IpCidr {
-  readonly address: IpAddress;
-  readonly prefixLength: number;
-}
-
-export const cidrToString = (c: IpCidr): string => `${c.address.value}/${c.prefixLength}`;
-
-/** Parse "a.b.c.d/n" or "a.b.c.d m.m.m.m" — mask form parsed to a prefix. */
-export function parseCidr(input: string): Result<IpCidr> {
-  const s = input.trim();
-  const sep = s.includes('/') ? '/' : ' ';
-  const i = s.indexOf(sep);
-  if (i === -1) {
-    return err(
-      toolError('INVALID_INPUT', `Invalid CIDR "${input}": expected "address/prefix".`, {
-        technical: `parseCidr("${input}"): no separator`,
-      }),
-    );
-  }
-  const addr = parseIp(s.slice(0, i));
-  if (!addr.ok) return addr;
-  const rest = s.slice(i + 1).trim();
-
-  let prefix: number;
-  if (rest.includes('.')) {
-    // dotted netmask form — count bits
-    const mask = parseV4(rest);
-    if (!mask.ok || isV4HostMask(mask.value.int)) {
-      return err(
-        toolError('INVALID_INPUT', `Invalid netmask "${rest}".`, {
-          technical: `parseCidr: netmask "${rest}" is not a contiguous mask`,
-        }),
-      );
-    }
-    prefix = maskToPrefix(mask.value.int);
-  } else {
-    if (!/^\d{1,3}$/.test(rest)) {
-      return err(
-        toolError('INVALID_INPUT', `Invalid prefix length "${rest}".`, {
-          technical: `parseCidr: bad prefix "${rest}"`,
-        }),
-      );
-    }
-    prefix = Number(rest);
-  }
-
-  const maxPrefix = addr.value.family === 4 ? 32 : 128;
-  if (prefix > maxPrefix) {
-    return err(
-      toolError('INVALID_INPUT', `Prefix /${prefix} is invalid for IPv${addr.value.family}.`, {
-        technical: `parseCidr: prefix ${prefix} > ${maxPrefix}`,
-      }),
-    );
-  }
-  return ok({ address: addr.value, prefixLength: prefix });
-}
-
-function isV4HostMask(int: bigint): boolean {
-  // A valid netmask is 1s followed by 0s. Detect non-contiguous bits.
-  let seenZero = false;
-  for (let bit = 31; bit >= 0; bit--) {
-    const b = (int >> BigInt(bit)) & 1n;
-    if (b === 0n) seenZero = true;
-    else if (seenZero) return true; // 1 after 0 → non-contiguous
-  }
-  return false;
-}
-
-function maskToPrefix(int: bigint): number {
-  let p = 0;
-  for (let bit = 31; bit >= 0; bit--) {
-    if (((int >> BigInt(bit)) & 1n) === 1n) p++;
-  }
-  return p;
-}
-
-/** Re-export IP parsing for registry consumers' convenience. */
 export { parseIp, parseV4, parseV6 } from '../ip/ip';
 export type { IpAddress, IpV4Address, IpV6Address, IpFamily } from '../ip/ip';
+export {
+  asV4Cidr,
+  cidrToString,
+  parseCidr,
+  prefixToMaskV4,
+  wildcardMaskV4,
+} from '../ip/cidr';
+export type { IpCidr, Ipv4Cidr } from '../ip/cidr';
 export { ok, err, type Result } from '../result/result';
 export { toolError, type ToolError, type ToolErrorCode } from '../result/toolError';

@@ -1,4 +1,6 @@
 allowBuilds:
   '@parcel/watcher': true
   unrs-resolver: true
+minimumReleaseAgeExclude:
+  - expo-clipboard@57.0.2
 storeDir: /home/mrbrooks/Projects/netops-mobile/.tools/pnpm-store

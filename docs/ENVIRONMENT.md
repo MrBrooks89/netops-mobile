@@ -13,7 +13,10 @@ nothing writes to `$HOME`. This keeps the sandbox happy and the setup portable.
 ├── home/                    # redirected HOME for sandboxed tooling (AVD lives here:
 │                            #   .tools/home/.android/avd/netops-test.{avd,ini})
 ├── npm-cache/               # npm cache for the few npx-style calls
-├── pnpm-store/              # pnpm content-addressable store (also in pnpm-workspace.yaml)
+├── home/.local/share/pnpm/store/   # pnpm content-addressable store (pnpm's default,
+│                            #   resolved from the redirected HOME — deliberately NOT
+│                            #   pinned in pnpm-workspace.yaml, which would embed an
+│                            #   absolute host path and break CI)
 └── docker-config/           # DOCKER_CONFIG so docker CLI state stays workspace-local
 ```
 

@@ -108,3 +108,23 @@ export function portStats(entries: readonly PortEntry[] = PORTS): {
   }
   return { total: entries.length, tcp, udp };
 }
+
+/**
+ * Content fingerprint of a dataset (FNV-1a, 32-bit, hex).
+ *
+ * The database seeds its `ports` table from this dataset; the seeder stores the
+ * fingerprint so an app update that changes the list re-seeds exactly once,
+ * instead of diffing hundreds of rows on every launch. Order-sensitive, which
+ * is fine: PORTS has a fixed canonical sort.
+ */
+export function datasetFingerprint(entries: readonly PortEntry[] = PORTS): string {
+  let hash = 0x811c9dc5;
+  for (const entry of entries) {
+    const line = `${entry.port}|${entry.proto}|${entry.service}|${entry.description}\n`;
+    for (let i = 0; i < line.length; i++) {
+      hash ^= line.charCodeAt(i);
+      hash = Math.imul(hash, 0x01000193) >>> 0;
+    }
+  }
+  return hash.toString(16).padStart(8, '0');
+}

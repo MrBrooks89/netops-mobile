@@ -1,12 +1,13 @@
 /**
- * Root layout — theme provider wraps everything; Stack hosts the tab group
- * and tool screens.
+ * Root layout — app providers (settings, database, theme) wrap the Stack that
+ * hosts the tab group and tool screens.
  */
 
 import React from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { ThemeProvider, useTheme } from '../src/ui/components';
+import { AppProviders } from '../src/app/AppProviders';
+import { useTheme } from '../src/ui/components';
 
 function RootStack() {
   const { theme } = useTheme();
@@ -26,8 +27,8 @@ function RootStack() {
 
 export default function RootLayout() {
   return (
-    <ThemeProvider>
+    <AppProviders>
       <RootStack />
-    </ThemeProvider>
+    </AppProviders>
   );
 }

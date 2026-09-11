@@ -6,15 +6,10 @@
  * default rather than propagate into the UI.
  */
 
+import type { AppSettings, ThemePreference } from '../../core/model/settings';
 import type { SettingsStore } from './store';
 
-export type ThemePreference = 'system' | 'light' | 'dark';
-
-export interface AppSettings {
-  readonly theme: ThemePreference;
-  readonly historyEnabled: boolean;
-  readonly historyRetentionLimit: number;
-}
+export type { AppSettings, ThemePreference };
 
 export const SETTINGS_KEYS = {
   theme: 'settings.theme',

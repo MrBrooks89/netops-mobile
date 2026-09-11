@@ -1,3 +1,5 @@
+import type { ThemePreference } from '../core/model/settings';
+
 /**
  * Theme tokens — single source of truth for colors, spacing, typography.
  *
@@ -77,3 +79,16 @@ export const lightTheme: Theme = {
 
 export const themes = { dark: darkTheme, light: lightTheme };
 export type ThemeName = keyof typeof themes;
+
+/**
+ * Resolve the user's preference (which may be "system") against the device
+ * scheme. Anything other than an explicit light preference resolves to dark,
+ * so the app has a sane appearance when the platform reports nothing.
+ */
+export function resolveThemeName(
+  preference: ThemePreference,
+  systemScheme: string | null | undefined,
+): ThemeName {
+  if (preference === 'system') return systemScheme === 'light' ? 'light' : 'dark';
+  return preference;
+}

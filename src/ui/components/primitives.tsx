@@ -3,30 +3,41 @@
  * overhaul (or a Paper swap, plan D6) never touches feature code.
  */
 
-import React, { createContext, useContext, useMemo, useState } from 'react';
+import React, { createContext, useContext, useMemo } from 'react';
 import {
   ScrollView,
   ScrollViewProps,
   StyleSheet,
   Text,
   TextProps,
+  useColorScheme,
   View,
   ViewProps,
 } from 'react-native';
-import { themes, type Theme, type ThemeName } from '../theme';
+import type { ThemePreference } from '../../core/model/settings';
+import { resolveThemeName, themes, type Theme } from '../theme';
 
 // ---------------------------------------------------------------------------
 // Theme context (system follow is wired in M2 settings; M1 defaults to dark)
 // ---------------------------------------------------------------------------
 
-const ThemeCtx = createContext<{ theme: Theme; setTheme: (t: ThemeName) => void }>({
-  theme: themes.dark,
-  setTheme: () => {},
-});
+const ThemeCtx = createContext<{ theme: Theme }>({ theme: themes.dark });
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [name, setName] = useState<ThemeName>('dark');
-  const value = useMemo(() => ({ theme: themes[name], setTheme: setName }), [name]);
+/**
+ * The active theme derives from the user's stored preference (which may be
+ * "system") plus the device scheme. It is a pure function of those two inputs,
+ * so changing the setting in the Settings screen repaints immediately.
+ */
+export function ThemeProvider({
+  children,
+  preference = 'system',
+}: {
+  children: React.ReactNode;
+  preference?: ThemePreference;
+}) {
+  const systemScheme = useColorScheme();
+  const name = resolveThemeName(preference, systemScheme);
+  const value = useMemo(() => ({ theme: themes[name] }), [name]);
   return <ThemeCtx.Provider value={value}>{children}</ThemeCtx.Provider>;
 }
 

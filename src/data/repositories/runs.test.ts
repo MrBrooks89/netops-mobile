@@ -137,6 +137,32 @@ describe('run repository', () => {
     db.close();
   });
 
+  it('stores payloads containing bigint values (core reports carry IP integers)', async () => {
+    const { db, runs } = await setup();
+    // The subnet calculator's report embeds IpAddress.int as a bigint, and
+    // JSON.stringify throws on those — which previously dropped the entry and
+    // left history silently empty.
+    const recorded = await runs.record(
+      run({
+        input: { cidr: '192.168.1.0/24', int: 3232235776n },
+        detail: { cidr: { address: { int: 3232235776n, value: '192.168.1.0' } }, hostCount: 254 },
+      }),
+    );
+    expect(recorded.ok).toBe(true);
+    if (!recorded.ok) return;
+
+    const fetched = await runs.get('r_001');
+    if (fetched.ok && fetched.value) {
+      // bigints become decimal strings; everything else round-trips
+      expect(fetched.value.input).toEqual({ cidr: '192.168.1.0/24', int: '3232235776' });
+      expect(fetched.value.detail).toEqual({
+        cidr: { address: { int: '3232235776', value: '192.168.1.0' } },
+        hostCount: 254,
+      });
+    }
+    db.close();
+  });
+
   it('degrades corrupt status and payloads instead of throwing', async () => {
     const { db, runs } = await setup();
     await runs.record(run());

@@ -22,7 +22,7 @@ import {
   ToolHeader,
   useTheme,
 } from '../../ui/components';
-import { useAppData } from '../../app/AppProviders';
+import { useAppData } from '../../../src/providers/AppProviders';
 import type { ToolScreenProps } from '../../core/registry/types';
 import { portStats, searchPorts, type PortEntry, type PortProto } from '../../core/ports/ports';
 import { groupDigits } from '../../core/util/format';

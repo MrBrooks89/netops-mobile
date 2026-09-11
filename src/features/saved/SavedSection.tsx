@@ -43,12 +43,12 @@ export interface SavedSectionProps<T extends SavedEntityBase> {
     value: string;
     tags: string[];
     notes: string;
-  }) => Promise<Result<unknown>>;
+  }) => Result<unknown>;
   readonly onUpdate: (
     id: string,
     input: { label: string; value: string; tags: string[]; notes: string },
-  ) => Promise<Result<unknown>>;
-  readonly onDelete: (id: string) => Promise<Result<boolean>>;
+  ) => Result<unknown>;
+  readonly onDelete: (id: string) => Result<boolean>;
   readonly onExport: (format: ExportFormat) => void;
   readonly onChanged: () => void;
 }
@@ -75,7 +75,7 @@ export function SavedSection<T extends SavedEntityBase>(props: SavedSectionProps
       tags: parseTagsText(form.tagsText),
       notes: form.notes,
     };
-    const result = editingId ? await props.onUpdate(editingId, input) : await props.onCreate(input);
+    const result = editingId ? props.onUpdate(editingId, input) : props.onCreate(input);
     setBusy(false);
     if (!result.ok) {
       setError(result.error.message);
@@ -97,8 +97,8 @@ export function SavedSection<T extends SavedEntityBase>(props: SavedSectionProps
       {
         text: 'Delete',
         style: 'destructive',
-        onPress: async () => {
-          const result = await props.onDelete(item.id);
+        onPress: () => {
+          const result = props.onDelete(item.id);
           if (!result.ok) setError(result.error.message);
           else props.onChanged();
         },

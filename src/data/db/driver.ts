@@ -1,18 +1,22 @@
 /**
  * SQL driver port.
  *
- * Repositories speak to this narrow interface rather than to `expo-sqlite`
- * directly, which keeps the data layer testable against real SQLite in Jest
- * (see test-utils/sqljsDriver.ts) and leaves room for a different backend
- * later without touching a single repository.
+ * **Synchronous by design.** expo-sqlite exposes a synchronous API and the data
+ * volumes here are tiny (hundreds of rows), so the whole data layer can run
+ * without promises. That matters beyond style: the app must have its
+ * repositories during the *first* render, because expo-router needs its
+ * navigator mounted then to build the route tree. An asynchronous bootstrap
+ * forces a loading gate in the root layout, and gating the navigator leaves the
+ * router with no routes (see docs/M2_VERIFICATION.md).
  *
- * Deliberate design points:
- *  - Positional `?` parameters only. Named parameters are convenient but the
- *    two drivers bind them differently; positional binding is unambiguous.
- *  - No `boolean` params: SQLite has no boolean type, so ports and flags are
- *    stored as 0/1 INTEGERs and must be converted at the repository boundary.
- *  - `transaction()` is scoped and rolls back on throw, so no repository ever
- *    writes BEGIN/COMMIT by hand.
+ * Repositories may still be `async` if convenient — `await` on a plain value is
+ * a no-op.
+ *
+ * Other design points:
+ *  - Positional `?` parameters only, so both drivers bind identically.
+ *  - No `boolean` params: SQLite has no boolean type, so flags are 0/1 INTEGERs.
+ *  - `transaction()` is scoped; no repository writes BEGIN/COMMIT by hand.
+ *    Transactions do not nest — nothing in the data layer nests them.
  */
 
 import type { SQLiteBindValue, SQLiteDatabase } from 'expo-sqlite';
@@ -27,12 +31,12 @@ export interface SqlRunResult {
 
 export interface SqlDriver {
   /** Run one or more statements with no parameters (DDL, PRAGMAs). */
-  exec(sql: string): Promise<void>;
-  run(sql: string, params?: SqlParams): Promise<SqlRunResult>;
-  all<T>(sql: string, params?: SqlParams): Promise<T[]>;
-  first<T>(sql: string, params?: SqlParams): Promise<T | null>;
-  /** Run `fn` inside a transaction; roll back if it throws. */
-  transaction<T>(fn: (tx: SqlDriver) => Promise<T>): Promise<T>;
+  exec(sql: string): void;
+  run(sql: string, params?: SqlParams): SqlRunResult;
+  all<T>(sql: string, params?: SqlParams): T[];
+  first<T>(sql: string, params?: SqlParams): T | null;
+  /** Run `fn` inside a transaction; rolls back if it throws. */
+  transaction<T>(fn: (tx: SqlDriver) => T): T;
 }
 
 const bind = (params: SqlParams): SQLiteBindValue[] => [...params];
@@ -40,23 +44,21 @@ const bind = (params: SqlParams): SQLiteBindValue[] => [...params];
 /** Wrap an open expo-sqlite database as a SqlDriver. */
 export function expoDriver(db: SQLiteDatabase): SqlDriver {
   const driver: SqlDriver = {
-    exec: (sql) => db.execAsync(sql),
+    exec: (sql) => db.execSync(sql),
 
-    run: async (sql, params = []) => {
-      const result = await db.runAsync(sql, bind(params));
+    run: (sql, params = []) => {
+      const result = db.runSync(sql, bind(params));
       return { changes: result.changes, lastInsertRowId: result.lastInsertRowId };
     },
 
-    all: <T>(sql: string, params: SqlParams = []) => db.getAllAsync<T>(sql, bind(params)),
+    all: <T>(sql: string, params: SqlParams = []) => db.getAllSync<T>(sql, bind(params)),
 
-    first: <T>(sql: string, params: SqlParams = []) => db.getFirstAsync<T>(sql, bind(params)),
+    first: <T>(sql: string, params: SqlParams = []) => db.getFirstSync<T>(sql, bind(params)),
 
-    transaction: async <T>(fn: (tx: SqlDriver) => Promise<T>): Promise<T> => {
-      // withExclusiveTransactionAsync gives us a txn-scoped handle and rolls
-      // back automatically when the callback throws.
+    transaction: <T>(fn: (tx: SqlDriver) => T): T => {
       let value: T | undefined;
-      await db.withExclusiveTransactionAsync(async (txn) => {
-        value = await fn(expoDriver(txn));
+      db.withTransactionSync(() => {
+        value = fn(driver);
       });
       return value as T;
     },
@@ -70,15 +72,16 @@ export const DATABASE_NAME = 'netops.db';
 /**
  * Open (and configure) the app database.
  *
- * WAL is recommended by the Expo docs for general performance; foreign keys
- * are enabled explicitly because SQLite defaults them off.
+ * WAL is recommended by the Expo docs; foreign keys are enabled explicitly
+ * because SQLite defaults them off. The opener is injected so tests can supply
+ * an in-memory database without touching the native module.
  */
-export async function openAppDatabase(
-  open: (name: string) => Promise<SQLiteDatabase>,
+export function openAppDatabase(
+  open: (name: string) => SQLiteDatabase,
   name = DATABASE_NAME,
-): Promise<SqlDriver> {
-  const db = await open(name);
-  await db.execAsync('PRAGMA journal_mode = WAL');
-  await db.execAsync('PRAGMA foreign_keys = ON');
+): SqlDriver {
+  const db = open(name);
+  db.execSync('PRAGMA journal_mode = WAL');
+  db.execSync('PRAGMA foreign_keys = ON');
   return expoDriver(db);
 }

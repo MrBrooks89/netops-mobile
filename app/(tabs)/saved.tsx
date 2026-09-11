@@ -11,7 +11,7 @@ import {
 } from '../../src/data/export/codecs';
 import { shareExport } from '../../src/data/export/share';
 import { SavedSection } from '../../src/features/saved/SavedSection';
-import { useAppData } from '../../src/app/AppProviders';
+import { useAppData } from '../../src/providers/AppProviders';
 import { Note, ScrollScreen, ToolHeader } from '../../src/ui/components';
 
 export default function SavedTab() {
@@ -69,8 +69,8 @@ export default function SavedTab() {
         valueHint="Saved in canonical form — hostnames are lower-cased."
         items={hosts}
         valueOf={(host) => host.host}
-        onCreate={async (input) => data.hosts.create({ ...input, host: input.value })}
-        onUpdate={async (id, input) =>
+        onCreate={(input) => data.hosts.create({ ...input, host: input.value })}
+        onUpdate={(id, input) =>
           data.hosts.update(id, {
             label: input.label,
             host: input.value,
@@ -90,8 +90,8 @@ export default function SavedTab() {
         valueHint="Accepts 192.168.1.0/24 or 192.168.1.0 255.255.255.0"
         items={networks}
         valueOf={(network) => network.cidr}
-        onCreate={async (input) => data.networks.create({ ...input, cidr: input.value })}
-        onUpdate={async (id, input) =>
+        onCreate={(input) => data.networks.create({ ...input, cidr: input.value })}
+        onUpdate={(id, input) =>
           data.networks.update(id, {
             label: input.label,
             cidr: input.value,

@@ -9,7 +9,7 @@ import type { RunRecord } from '../../src/core/model/entities';
 import { getTool } from '../../src/core/registry/registry';
 import { exportRunHistory, type ExportFormat } from '../../src/data/export/codecs';
 import { shareExport } from '../../src/data/export/share';
-import { useAppData, useAppSettings } from '../../src/app/AppProviders';
+import { useAppData, useAppSettings } from '../../src/providers/AppProviders';
 import {
   Button,
   Card,

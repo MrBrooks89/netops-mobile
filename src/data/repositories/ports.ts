@@ -29,10 +29,10 @@ export interface SeedOutcome {
 
 export interface PortRepository {
   /** Seed (or re-seed) the table when the bundled dataset has changed. */
-  ensureSeeded(entries?: readonly PortEntry[]): Promise<Result<SeedOutcome>>;
+  ensureSeeded(entries?: readonly PortEntry[]): Result<SeedOutcome>;
   /** Ranked search; ranked by core/ports, stored by SQLite. */
-  search(query: string, proto?: PortProto | 'all'): Promise<Result<PortEntry[]>>;
-  count(): Promise<Result<number>>;
+  search(query: string, proto?: PortProto | 'all'): Result<PortEntry[]>;
+  count(): Result<number>;
 }
 
 interface PortRow {
@@ -64,9 +64,9 @@ export function createPortRepository(db: SqlDriver, meta?: SettingsStore): PortR
   // after the first read.
   let cache: PortEntry[] | null = null;
 
-  const load = async (): Promise<PortEntry[]> => {
+  const load = (): PortEntry[] => {
     if (cache) return cache;
-    const rows = await db.all<PortRow>('SELECT port, proto, service, description FROM ports');
+    const rows = db.all<PortRow>('SELECT port, proto, service, description FROM ports');
     cache = rows.map((row) => ({
       port: row.port,
       proto: isProto(row.proto) ? row.proto : 'tcp',
@@ -77,11 +77,11 @@ export function createPortRepository(db: SqlDriver, meta?: SettingsStore): PortR
   };
 
   return {
-    async ensureSeeded(entries = PORTS) {
+    ensureSeeded(entries = PORTS) {
       const fingerprint = datasetFingerprint(entries);
       try {
         const stored = meta?.get(DATA_KEYS.portsFingerprint) ?? null;
-        const existing = await db.first<{ n: number }>('SELECT COUNT(*) AS n FROM ports');
+        const existing = db.first<{ n: number }>('SELECT COUNT(*) AS n FROM ports');
         const count = existing?.n ?? 0;
 
         // Fast path: the stored fingerprint matches, or (without a settings
@@ -91,10 +91,10 @@ export function createPortRepository(db: SqlDriver, meta?: SettingsStore): PortR
           : count === entries.length;
         if (upToDate) return ok({ seeded: false, count, fingerprint });
 
-        await db.transaction(async (tx) => {
+        db.transaction((tx) => {
           // Rewrite wholesale: the bundled dataset is the source of truth, so a
           // removed or renamed port must not survive an update.
-          await tx.exec('DELETE FROM ports');
+          tx.exec('DELETE FROM ports');
           // Multi-row inserts. Chunked because each row binds four parameters
           // and older SQLite builds cap a statement at 999 variables.
           for (let offset = 0; offset < entries.length; offset += INSERT_CHUNK_ROWS) {
@@ -106,7 +106,7 @@ export function createPortRepository(db: SqlDriver, meta?: SettingsStore): PortR
               entry.service,
               entry.description,
             ]);
-            await tx.run(
+            tx.run(
               `INSERT INTO ports (port, proto, service, description) VALUES ${placeholders}`,
               params,
             );
@@ -121,18 +121,18 @@ export function createPortRepository(db: SqlDriver, meta?: SettingsStore): PortR
       }
     },
 
-    async search(query, proto = 'all') {
+    search(query, proto = 'all') {
       try {
-        const entries = await load();
+        const entries = load();
         return ok(searchPorts(query, { proto, entries }));
       } catch (cause) {
         return err(storageError(cause, 'search ports'));
       }
     },
 
-    async count() {
+    count() {
       try {
-        const row = await db.first<{ n: number }>('SELECT COUNT(*) AS n FROM ports');
+        const row = db.first<{ n: number }>('SELECT COUNT(*) AS n FROM ports');
         return ok(row?.n ?? 0);
       } catch (cause) {
         return err(storageError(cause, 'count ports'));

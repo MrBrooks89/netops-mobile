@@ -11,15 +11,16 @@
  * "database not open yet" state; a failure shows a recovery screen instead.
  */
 
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import { View } from 'react-native';
 import type { AppSettings } from '../core/model/settings';
+import type { Result } from '../core/result/result';
 import type { ToolError } from '../core/result/toolError';
 import { openAppData, type AppData } from '../data/bootstrap';
 import { createKvSettingsStore } from '../data/settings/kvStore';
 import { readSettings, writeSettings } from '../data/settings/appSettings';
 import type { SettingsStore } from '../data/settings/store';
-import { Card, Screen, StyledText, ThemeProvider, useTheme } from '../ui/components';
+import { Card, Screen, StyledText, ThemeProvider } from '../ui/components';
 
 export interface AppContextValue {
   readonly settings: SettingsStore;
@@ -66,31 +67,12 @@ export function AppContextProvider({
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
 
-type BootState =
-  | { readonly status: 'loading' }
-  | { readonly status: 'error'; readonly error: ToolError }
-  | { readonly status: 'ready'; readonly data: AppData };
-
 export function AppProviders({ children }: { children: React.ReactNode }) {
   const settings = useMemo(() => createKvSettingsStore(), []);
+  // Runs once, synchronously, during the first render. The navigator must mount
+  // on that first render for expo-router to build its route tree.
+  const [boot] = useState<Result<AppData>>(() => openAppData(settings));
   const [appSettings, setAppSettings] = useState<AppSettings>(() => readSettings(settings));
-  const [boot, setBoot] = useState<BootState>({ status: 'loading' });
-
-  useEffect(() => {
-    let cancelled = false;
-    openAppData(settings).then((result) => {
-      if (cancelled) return;
-      if (result.ok) {
-        setAppSettings(result.value.appSettings);
-        setBoot({ status: 'ready', data: result.value });
-      } else {
-        setBoot({ status: 'error', error: result.error });
-      }
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [settings]);
 
   const updateSettings = useCallback(
     (patch: Partial<AppSettings>) => setAppSettings(writeSettings(settings, patch)),
@@ -101,51 +83,33 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
 
   const value = useMemo<AppContextValue | null>(
     () =>
-      boot.status === 'ready'
-        ? {
-            settings,
-            appSettings,
-            updateSettings,
-            refreshSettings,
-            data: boot.data,
-          }
-        : null,
+      boot.ok ? { settings, appSettings, updateSettings, refreshSettings, data: boot.value } : null,
     [boot, settings, appSettings, updateSettings, refreshSettings],
   );
 
   return (
     <ThemeProvider preference={appSettings.theme}>
-      {boot.status === 'loading' && <LoadingView />}
-      {boot.status === 'error' && <BootErrorView error={boot.error} />}
-      {value && <AppContext.Provider value={value}>{children}</AppContext.Provider>}
+      {value ? (
+        <AppContext.Provider value={value}>{children}</AppContext.Provider>
+      ) : (
+        <BootErrorView error={boot.ok ? null : boot.error} />
+      )}
     </ThemeProvider>
   );
 }
 
-function LoadingView() {
-  const { theme } = useTheme();
-  return (
-    <Screen style={{ justifyContent: 'center', alignItems: 'center' }}>
-      <ActivityIndicator color={theme.colors.primary} />
-      <StyledText dim style={{ marginTop: 12 }}>
-        Preparing local storage…
-      </StyledText>
-    </Screen>
-  );
-}
-
-function BootErrorView({ error }: { error: ToolError }) {
+function BootErrorView({ error }: { error: ToolError | null }) {
   return (
     <Screen style={{ justifyContent: 'center' }}>
       <Card>
         <StyledText style={{ fontWeight: '700', marginBottom: 6 }}>
           Local storage could not be opened
         </StyledText>
-        <StyledText dim>{error.message}</StyledText>
-        {error.technical ? (
+        <StyledText dim>{error?.message ?? 'Unknown storage error.'}</StyledText>
+        {error?.technical ? (
           <View style={{ marginTop: 10 }}>
             <StyledText dim style={{ fontSize: 12 }}>
-              {error.technical}
+              {error?.technical}
             </StyledText>
           </View>
         ) : null}

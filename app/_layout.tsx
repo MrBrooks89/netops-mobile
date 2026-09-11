@@ -6,7 +6,7 @@
 import React from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { AppProviders } from '../src/app/AppProviders';
+import { AppProviders } from '../src/providers/AppProviders';
 import { useTheme } from '../src/ui/components';
 
 function RootStack() {

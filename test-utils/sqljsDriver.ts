@@ -44,11 +44,11 @@ export async function createTestDatabase(): Promise<TestDatabase> {
   const driver: TestDatabase = {
     raw: db,
 
-    exec: async (sql) => {
+    exec: (sql) => {
       db.run(sql);
     },
 
-    run: async (sql, params = []): Promise<SqlRunResult> => {
+    run: (sql, params = []): SqlRunResult => {
       const stmt = db.prepare(sql);
       try {
         if (params.length > 0) stmt.bind([...params]);
@@ -60,18 +60,18 @@ export async function createTestDatabase(): Promise<TestDatabase> {
       return { changes: db.getRowsModified(), lastInsertRowId };
     },
 
-    all: async <T>(sql: string, params: SqlParams = []) => all<T>(sql, params),
+    all: <T>(sql: string, params: SqlParams = []) => all<T>(sql, params),
 
-    first: async <T>(sql: string, params: SqlParams = []) => all<T>(sql, params)[0] ?? null,
+    first: <T>(sql: string, params: SqlParams = []) => all<T>(sql, params)[0] ?? null,
 
-    transaction: async <T>(fn: (tx: SqlDriver) => Promise<T>): Promise<T> => {
+    transaction: <T>(fn: (tx: SqlDriver) => T): T => {
       // Savepoints make nesting safe (a repository may be called inside the
       // migration runner's transaction).
       const savepoint = `sp_${depth}`;
       depth += 1;
       db.run(depth === 1 ? 'BEGIN' : `SAVEPOINT ${savepoint}`);
       try {
-        const value = await fn(driver);
+        const value = fn(driver);
         db.run(depth === 1 ? 'COMMIT' : `RELEASE ${savepoint}`);
         return value;
       } catch (cause) {

@@ -22,16 +22,16 @@ export interface RunQuery {
 }
 
 export interface RunRepository {
-  record(input: RunRecordInput): Promise<Result<RunRecord>>;
+  record(input: RunRecordInput): Result<RunRecord>;
   /** Newest first. */
-  list(query?: RunQuery): Promise<Result<RunRecord[]>>;
-  get(id: string): Promise<Result<RunRecord | null>>;
-  remove(id: string): Promise<Result<boolean>>;
+  list(query?: RunQuery): Result<RunRecord[]>;
+  get(id: string): Result<RunRecord | null>;
+  remove(id: string): Result<boolean>;
   /** Delete everything; returns how many runs were removed. */
-  clear(): Promise<Result<number>>;
-  count(): Promise<Result<number>>;
+  clear(): Result<number>;
+  count(): Result<number>;
   /** Keep the newest `keep` runs, delete the rest; returns how many were pruned. */
-  prune(keep: number): Promise<Result<number>>;
+  prune(keep: number): Result<number>;
 }
 
 interface RunRow {
@@ -53,6 +53,16 @@ const RUN_STATUSES: readonly RunStatus[] = ['running', 'success', 'partial', 'er
 /** Unknown statuses only appear if a row was hand-edited; 'error' is the safest read. */
 const parseStatus = (raw: string): RunStatus =>
   (RUN_STATUSES as readonly string[]).includes(raw) ? (raw as RunStatus) : 'error';
+
+/**
+ * Serialise a tool payload for storage.
+ *
+ * Core reports carry `bigint` values (IP integers), and `JSON.stringify` throws
+ * on those — which would silently drop the history entry. Addresses are stored
+ * as their decimal string instead, which is what a reader wants anyway.
+ */
+const toJson = (value: unknown): string =>
+  JSON.stringify(value, (_key, item) => (typeof item === 'bigint' ? item.toString() : item));
 
 /** Corrupt JSON degrades to null rather than breaking the history list. */
 const parseJson = (text: string | null): unknown | null => {
@@ -93,10 +103,10 @@ export function createRunRepository(
   });
 
   return {
-    async record(input) {
+    record(input) {
       const id = newId();
       try {
-        await db.run(
+        db.run(
           `INSERT INTO runs
              (id, tool_id, status, input, summary, detail, error_code, error_message,
               started_at, finished_at, duration_ms)
@@ -105,11 +115,9 @@ export function createRunRepository(
             id,
             input.toolId,
             input.status,
-            JSON.stringify(input.input ?? null),
+            toJson(input.input ?? null),
             input.summary,
-            input.detail === null || input.detail === undefined
-              ? null
-              : JSON.stringify(input.detail),
+            input.detail === null || input.detail === undefined ? null : toJson(input.detail),
             input.errorCode ?? null,
             input.errorMessage ?? null,
             input.startedAt,
@@ -123,60 +131,58 @@ export function createRunRepository(
       return ok({ ...input, id });
     },
 
-    async list(query = {}) {
+    list(query = {}) {
       try {
         const limit = query.limit !== undefined && query.limit > 0 ? query.limit : -1;
         const rows = query.toolId
-          ? await db.all<RunRow>(
+          ? db.all<RunRow>(
               `SELECT * FROM runs WHERE tool_id = ? ORDER BY started_at DESC, id DESC LIMIT ?`,
               [query.toolId, limit],
             )
-          : await db.all<RunRow>(`SELECT * FROM runs ORDER BY started_at DESC, id DESC LIMIT ?`, [
-              limit,
-            ]);
+          : db.all<RunRow>(`SELECT * FROM runs ORDER BY started_at DESC, id DESC LIMIT ?`, [limit]);
         return ok(rows.map(toModel));
       } catch (cause) {
         return err(storageError(cause, 'read history'));
       }
     },
 
-    async get(id) {
+    get(id) {
       try {
-        const row = await db.first<RunRow>('SELECT * FROM runs WHERE id = ?', [id]);
+        const row = db.first<RunRow>('SELECT * FROM runs WHERE id = ?', [id]);
         return ok(row ? toModel(row) : null);
       } catch (cause) {
         return err(storageError(cause, 'read the history entry'));
       }
     },
 
-    async remove(id) {
+    remove(id) {
       try {
-        const result = await db.run('DELETE FROM runs WHERE id = ?', [id]);
+        const result = db.run('DELETE FROM runs WHERE id = ?', [id]);
         return ok(result.changes > 0);
       } catch (cause) {
         return err(storageError(cause, 'delete the history entry'));
       }
     },
 
-    async clear() {
+    clear() {
       try {
-        const result = await db.run('DELETE FROM runs');
+        const result = db.run('DELETE FROM runs');
         return ok(result.changes);
       } catch (cause) {
         return err(storageError(cause, 'clear history'));
       }
     },
 
-    async count() {
+    count() {
       try {
-        const row = await db.first<{ n: number }>('SELECT COUNT(*) AS n FROM runs');
+        const row = db.first<{ n: number }>('SELECT COUNT(*) AS n FROM runs');
         return ok(row?.n ?? 0);
       } catch (cause) {
         return err(storageError(cause, 'count history'));
       }
     },
 
-    async prune(keep) {
+    prune(keep) {
       if (!Number.isInteger(keep) || keep < 0) {
         return err(
           toolError('INVALID_INPUT', 'History retention must be zero or more runs.', {
@@ -185,7 +191,7 @@ export function createRunRepository(
         );
       }
       try {
-        const result = await db.run(
+        const result = db.run(
           `DELETE FROM runs
             WHERE id NOT IN (
               SELECT id FROM runs ORDER BY started_at DESC, id DESC LIMIT ?

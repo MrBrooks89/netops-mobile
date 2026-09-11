@@ -1,14 +1,17 @@
 /**
  * Application bootstrap: open the database, bring the schema up to date, seed
  * the port reference and enforce history retention — in one place, so the
- * startup order is explicit and every screen can assume ready repositories.
+ * startup order is explicit.
+ *
+ * **Synchronous on purpose.** The root layout must render its expo-router
+ * navigator during the very first render; an asynchronous bootstrap would force
+ * a loading gate there and leave the router with no routes. See driver.ts.
  *
  * Returns a `Result` rather than throwing: "local storage could not be opened"
  * is a screen the user can be shown, not a crash.
  */
 
-import { openDatabaseAsync } from 'expo-sqlite';
-import type { AppSettings } from '../core/model/settings';
+import { openDatabaseSync } from 'expo-sqlite';
 import { err, ok, type Result } from '../core/result/result';
 import { toolError } from '../core/result/toolError';
 import { openAppDatabase, type SqlDriver } from './db/driver';
@@ -27,26 +30,24 @@ export interface AppData {
   readonly runs: RunRepository;
   readonly ports: PortRepository;
   readonly settings: SettingsStore;
-  readonly appSettings: AppSettings;
 }
 
-export async function openAppData(settings: SettingsStore): Promise<Result<AppData>> {
+export function openAppData(settings: SettingsStore): Result<AppData> {
   try {
-    const db = await openAppDatabase(openDatabaseAsync);
+    const db = openAppDatabase(openDatabaseSync);
 
-    const migrated = await migrate(db);
+    const migrated = migrate(db);
     if (!migrated.ok) return migrated;
 
     const ports = createPortRepository(db, settings);
-    const seeded = await ports.ensureSeeded();
+    const seeded = ports.ensureSeeded();
     if (!seeded.ok) return seeded;
 
     const runs = createRunRepository(db);
-    const appSettings = readSettings(settings);
 
     // Retention is enforced at startup as well as after each write, so a long
     // gap between sessions cannot leave an oversized history behind.
-    await runs.prune(appSettings.historyRetentionLimit);
+    runs.prune(readSettings(settings).historyRetentionLimit);
 
     return ok({
       db,
@@ -55,7 +56,6 @@ export async function openAppData(settings: SettingsStore): Promise<Result<AppDa
       runs,
       ports,
       settings,
-      appSettings,
     });
   } catch (cause) {
     const detail = cause instanceof Error ? cause.message : String(cause);

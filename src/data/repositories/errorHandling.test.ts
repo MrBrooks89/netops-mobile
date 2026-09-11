@@ -34,8 +34,7 @@ async function setupBroken() {
   };
 }
 
-async function expectStorageError(promise: Promise<Result<unknown>>): Promise<void> {
-  const result = await promise;
+function expectStorageError(result: Result<unknown>): void {
   expect(result.ok).toBe(false);
   if (!result.ok) {
     expect(result.error.code).toBe('STORAGE_ERROR');
@@ -47,29 +46,29 @@ async function expectStorageError(promise: Promise<Result<unknown>>): Promise<vo
 describe('repositories map storage failures to STORAGE_ERROR', () => {
   it('hosts', async () => {
     const { db, hosts } = await setupBroken();
-    await expectStorageError(hosts.list());
-    await expectStorageError(hosts.get('h_1'));
-    await expectStorageError(hosts.create({ label: 'A', host: '10.0.0.1' }));
-    await expectStorageError(hosts.update('h_1', { label: 'B' }));
-    await expectStorageError(hosts.remove('h_1'));
-    await expectStorageError(hosts.count());
+    expectStorageError(hosts.list());
+    expectStorageError(hosts.get('h_1'));
+    expectStorageError(hosts.create({ label: 'A', host: '10.0.0.1' }));
+    expectStorageError(hosts.update('h_1', { label: 'B' }));
+    expectStorageError(hosts.remove('h_1'));
+    expectStorageError(hosts.count());
     db.close();
   });
 
   it('networks', async () => {
     const { db, networks } = await setupBroken();
-    await expectStorageError(networks.list());
-    await expectStorageError(networks.get('n_1'));
-    await expectStorageError(networks.create({ label: 'A', cidr: '10.0.0.0/24' }));
-    await expectStorageError(networks.update('n_1', { label: 'B' }));
-    await expectStorageError(networks.remove('n_1'));
-    await expectStorageError(networks.count());
+    expectStorageError(networks.list());
+    expectStorageError(networks.get('n_1'));
+    expectStorageError(networks.create({ label: 'A', cidr: '10.0.0.0/24' }));
+    expectStorageError(networks.update('n_1', { label: 'B' }));
+    expectStorageError(networks.remove('n_1'));
+    expectStorageError(networks.count());
     db.close();
   });
 
   it('runs', async () => {
     const { db, runs } = await setupBroken();
-    await expectStorageError(
+    expectStorageError(
       runs.record({
         toolId: 'subnet-calculator',
         status: 'success',
@@ -81,20 +80,20 @@ describe('repositories map storage failures to STORAGE_ERROR', () => {
         durationMs: null,
       }),
     );
-    await expectStorageError(runs.list());
-    await expectStorageError(runs.get('r_1'));
-    await expectStorageError(runs.remove('r_1'));
-    await expectStorageError(runs.clear());
-    await expectStorageError(runs.count());
-    await expectStorageError(runs.prune(10));
+    expectStorageError(runs.list());
+    expectStorageError(runs.get('r_1'));
+    expectStorageError(runs.remove('r_1'));
+    expectStorageError(runs.clear());
+    expectStorageError(runs.count());
+    expectStorageError(runs.prune(10));
     db.close();
   });
 
   it('ports', async () => {
     const { db, ports } = await setupBroken();
-    await expectStorageError(ports.ensureSeeded());
-    await expectStorageError(ports.search('ssh'));
-    await expectStorageError(ports.count());
+    expectStorageError(ports.ensureSeeded());
+    expectStorageError(ports.search('ssh'));
+    expectStorageError(ports.count());
     db.close();
   });
 

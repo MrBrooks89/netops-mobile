@@ -18,13 +18,13 @@ import { normalizeTags, parseTags, serializeTags } from './tags';
 
 export interface SavedRepository<TModel extends SavedEntityBase, TInput> {
   /** All rows, ordered by label (case-insensitive) then creation time. */
-  list(): Promise<Result<TModel[]>>;
-  get(id: string): Promise<Result<TModel | null>>;
-  create(input: TInput): Promise<Result<TModel>>;
-  update(id: string, patch: Partial<TInput>): Promise<Result<TModel>>;
+  list(): Result<TModel[]>;
+  get(id: string): Result<TModel | null>;
+  create(input: TInput): Result<TModel>;
+  update(id: string, patch: Partial<TInput>): Result<TModel>;
   /** `true` when a row was deleted, `false` when it was already gone. */
-  remove(id: string): Promise<Result<boolean>>;
-  count(): Promise<Result<number>>;
+  remove(id: string): Result<boolean>;
+  count(): Result<number>;
 }
 
 /** Row shape shared by both tables (`value` is read by the config). */
@@ -92,9 +92,9 @@ export function createSavedRepository<TModel extends SavedEntityBase, TInput ext
     db.first<SavedRow>(`SELECT * FROM ${table} WHERE id = ?`, [id]);
 
   return {
-    async list() {
+    list() {
       try {
-        const rows = await db.all<SavedRow>(
+        const rows = db.all<SavedRow>(
           `SELECT * FROM ${table} ORDER BY label COLLATE NOCASE ASC, created_at ASC`,
         );
         return ok(rows.map((row) => config.toModel(toFields(row))));
@@ -103,16 +103,16 @@ export function createSavedRepository<TModel extends SavedEntityBase, TInput ext
       }
     },
 
-    async get(id) {
+    get(id) {
       try {
-        const row = await selectById(id);
+        const row = selectById(id);
         return ok(row ? config.toModel(toFields(row)) : null);
       } catch (cause) {
         return err(storageError(cause, 'read the saved item'));
       }
     },
 
-    async create(input) {
+    create(input) {
       const value = config.parseValue(config.readInputValue(input));
       if (!value.ok) return value;
 
@@ -125,7 +125,7 @@ export function createSavedRepository<TModel extends SavedEntityBase, TInput ext
       const notes = (input.notes ?? '').trim();
 
       try {
-        await db.run(
+        db.run(
           `INSERT INTO ${table} (id, label, ${valueColumn}, tags, notes, created_at, updated_at)
            VALUES (?, ?, ?, ?, ?, ?, ?)`,
           [id, label, value.value, serializeTags(tags), notes, timestamp, timestamp],
@@ -147,9 +147,9 @@ export function createSavedRepository<TModel extends SavedEntityBase, TInput ext
       );
     },
 
-    async update(id, patch) {
+    update(id, patch) {
       try {
-        const row = await selectById(id);
+        const row = selectById(id);
         if (!row) {
           return err(
             toolError('NOT_FOUND', 'That item no longer exists.', {
@@ -177,7 +177,7 @@ export function createSavedRepository<TModel extends SavedEntityBase, TInput ext
         const notes = patch.notes === undefined ? existing.notes : patch.notes.trim();
         const updatedAt = now();
 
-        await db.run(
+        db.run(
           `UPDATE ${table} SET label = ?, ${valueColumn} = ?, tags = ?, notes = ?, updated_at = ?
            WHERE id = ?`,
           [label, value, serializeTags(tags), notes, updatedAt, id],
@@ -189,18 +189,18 @@ export function createSavedRepository<TModel extends SavedEntityBase, TInput ext
       }
     },
 
-    async remove(id) {
+    remove(id) {
       try {
-        const result = await db.run(`DELETE FROM ${table} WHERE id = ?`, [id]);
+        const result = db.run(`DELETE FROM ${table} WHERE id = ?`, [id]);
         return ok(result.changes > 0);
       } catch (cause) {
         return err(storageError(cause, 'delete the item'));
       }
     },
 
-    async count() {
+    count() {
       try {
-        const row = await db.first<{ n: number }>(`SELECT COUNT(*) AS n FROM ${table}`);
+        const row = db.first<{ n: number }>(`SELECT COUNT(*) AS n FROM ${table}`);
         return ok(row?.n ?? 0);
       } catch (cause) {
         return err(storageError(cause, 'count saved items'));

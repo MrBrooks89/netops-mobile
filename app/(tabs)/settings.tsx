@@ -10,7 +10,7 @@ import {
   RETENTION_MAX,
   RETENTION_MIN,
 } from '../../src/data/settings/appSettings';
-import { useAppData, useAppSettings } from '../../src/app/AppProviders';
+import { useAppData, useAppSettings } from '../../src/providers/AppProviders';
 import {
   Button,
   Card,

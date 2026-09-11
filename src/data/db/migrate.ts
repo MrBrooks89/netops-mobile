@@ -1,14 +1,13 @@
 /**
- * Migration runner.
+ * Migration runner (synchronous — see driver.ts for why).
  *
  * Applies pending migrations in ascending version order, each inside its own
  * transaction, and records them in `schema_migrations`. Idempotent: running it
  * twice applies nothing the second time.
  *
  * Failures come back as `Result` with a `STORAGE_ERROR` code — a database that
- * cannot be prepared is a user-visible condition ("could not open local
- * storage"), not a crash. A failed migration rolls back, so the database is
- * never left half-migrated.
+ * cannot be prepared is a user-visible condition, not a crash. A failed
+ * migration rolls back, so the database is never left half-migrated.
  */
 
 import { err, ok, type Result } from '../../core/result/result';
@@ -66,17 +65,17 @@ function invalid(message: string): Result<never> {
  * Bring the database up to the latest schema version.
  *
  * `migrations` is injectable so tests can exercise the version-bump path with
- * a real database (see migrate.sqlite.test.ts).
+ * a real database.
  */
-export async function migrate(
+export function migrate(
   db: SqlDriver,
   migrations: readonly Migration[] = MIGRATIONS,
-): Promise<Result<MigrateResult>> {
+): Result<MigrateResult> {
   const valid = validateMigrations(migrations);
   if (!valid.ok) return valid;
 
   try {
-    await db.exec(
+    db.exec(
       `CREATE TABLE IF NOT EXISTS schema_migrations (
          version    INTEGER PRIMARY KEY NOT NULL,
          name       TEXT NOT NULL,
@@ -84,7 +83,7 @@ export async function migrate(
        )`,
     );
 
-    const rows = await db.all<VersionRow>('SELECT version FROM schema_migrations');
+    const rows = db.all<VersionRow>('SELECT version FROM schema_migrations');
     const appliedVersions = new Set(rows.map((row) => row.version));
     const from = rows.reduce((max, row) => Math.max(max, row.version), 0);
 
@@ -93,11 +92,11 @@ export async function migrate(
       .sort((a, b) => a.version - b.version);
 
     for (const migration of pending) {
-      await db.transaction(async (tx) => {
+      db.transaction((tx) => {
         for (const statement of migration.statements) {
-          await tx.exec(statement);
+          tx.exec(statement);
         }
-        await tx.run('INSERT INTO schema_migrations (version, name, applied_at) VALUES (?, ?, ?)', [
+        tx.run('INSERT INTO schema_migrations (version, name, applied_at) VALUES (?, ?, ?)', [
           migration.version,
           migration.name,
           new Date().toISOString(),
@@ -108,13 +107,13 @@ export async function migrate(
     const to = pending.reduce((max, migration) => Math.max(max, migration.version), from);
     return ok({ from, to, applied: pending.map((migration) => migration.version) });
   } catch (cause) {
-    return err(storageError(cause, 'prepare local storage'));
+    return err(storageError(cause));
   }
 }
 
-function storageError(cause: unknown, action: string): ToolError {
+function storageError(cause: unknown): ToolError {
   const detail = cause instanceof Error ? cause.message : String(cause);
-  return toolError('STORAGE_ERROR', `Could not ${action} on this device.`, {
+  return toolError('STORAGE_ERROR', 'Could not prepare local storage on this device.', {
     technical: `migrate failed: ${detail}`,
     cause,
   });

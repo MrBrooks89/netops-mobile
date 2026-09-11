@@ -9,7 +9,7 @@
 
 import React from 'react';
 import { render } from '@testing-library/react-native';
-import { AppContextProvider, type AppContextValue } from '../src/app/AppProviders';
+import { AppContextProvider, type AppContextValue } from '../src/providers/AppProviders';
 import type { AppSettings } from '../src/core/model/settings';
 import { migrate } from '../src/data/db/migrate';
 import { createHostRepository } from '../src/data/repositories/hosts';
@@ -48,7 +48,6 @@ export async function createTestAppData(
     runs: createRunRepository(db),
     ports,
     settings,
-    appSettings,
   };
   return { db, data, appSettings };
 }

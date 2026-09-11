@@ -8,6 +8,11 @@
 
 import type { ToolModule } from './types';
 import { PlaceholderTool } from '../../features/_placeholder/PlaceholderTool';
+import { SubnetCalculatorScreen } from '../../features/subnet-calculator';
+import { CidrCalculatorScreen } from '../../features/cidr-calculator';
+import { WildcardMaskScreen } from '../../features/wildcard-mask-calculator';
+import { VlsmCalculatorScreen } from '../../features/vlsm-calculator';
+import { PortsReferenceScreen } from '../../features/ports-reference';
 
 export const TOOL_REGISTRY: readonly ToolModule[] = [
   {
@@ -17,7 +22,7 @@ export const TOOL_REGISTRY: readonly ToolModule[] = [
     category: 'ipv4',
     icon: 'calculator',
     requiredCapabilities: [],
-    Component: PlaceholderTool,
+    Component: SubnetCalculatorScreen,
   },
   {
     id: 'cidr-calculator',
@@ -26,7 +31,7 @@ export const TOOL_REGISTRY: readonly ToolModule[] = [
     category: 'ipv4',
     icon: 'git-network',
     requiredCapabilities: [],
-    Component: PlaceholderTool,
+    Component: CidrCalculatorScreen,
   },
   {
     id: 'wildcard-mask-calculator',
@@ -35,7 +40,7 @@ export const TOOL_REGISTRY: readonly ToolModule[] = [
     category: 'ipv4',
     icon: 'swap-horizontal',
     requiredCapabilities: [],
-    Component: PlaceholderTool,
+    Component: WildcardMaskScreen,
   },
   {
     id: 'vlsm-calculator',
@@ -44,7 +49,7 @@ export const TOOL_REGISTRY: readonly ToolModule[] = [
     category: 'ipv4',
     icon: 'layers',
     requiredCapabilities: [],
-    Component: PlaceholderTool,
+    Component: VlsmCalculatorScreen,
   },
   {
     id: 'ports-reference',
@@ -53,7 +58,7 @@ export const TOOL_REGISTRY: readonly ToolModule[] = [
     category: 'reference',
     icon: 'list',
     requiredCapabilities: [],
-    Component: PlaceholderTool,
+    Component: PortsReferenceScreen,
   },
   // --- future milestones (registry-driven degraded states are an M3+ concern) ---
   {

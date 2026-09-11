@@ -7,6 +7,7 @@
 #   scripts/emu.sh adb <args>   # run adb (host adb talks to emulator over host network)
 #   scripts/emu.sh wait         # block until sys.boot_completed=1
 #   scripts/emu.sh status       # show container + device state
+#   scripts/emu.sh text         # print the visible text of the current screen
 #
 # All state lives under .tools/ (workspace-local) — nothing touches $HOME.
 set -euo pipefail
@@ -24,7 +25,12 @@ export HOME="$ROOT/.tools/home"
 mkdir -p "$DOCKER_CONFIG"
 
 ADB="$SDK/platform-tools/adb"
-EMU='@netops-test -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -accel on -memory 3072 -cores 2'
+# -no-snapshot-load: always cold boot. Resuming AVD snapshots restores the
+#   *previous* app state, including a stale JS bundle, which silently makes
+#   device verification lie about what is installed. Determinism beats the
+#   ~30s saved by quick-boot.
+# -no-snapshot-save: never write one back, so the AVD stays reproducible.
+EMU='@netops-test -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -accel on -memory 3072 -cores 2 -no-snapshot-load -no-snapshot-save'
 
 cmd="${1:-status}"
 
@@ -55,7 +61,26 @@ case "$cmd" in
     ;;
   adb)
     shift
+    "$ADB" start-server >/dev/null 2>&1 || true
     "$ADB" "$@"
+    ;;
+  text)
+    # Print the visible text of the current screen, one line per element.
+    # Handy for scripted verification: scripts/emu.sh text
+    "$ADB" start-server >/dev/null 2>&1 || true
+    "$ADB" shell uiautomator dump /sdcard/window_dump.xml >/dev/null 2>&1
+    "$ADB" exec-out cat /sdcard/window_dump.xml | python3 -c '
+import re, sys, xml.etree.ElementTree as ET
+raw = sys.stdin.read()
+m = re.search(r"<\?xml.*?</hierarchy>", raw, re.S)
+if not m:
+    sys.exit("could not read UI hierarchy")
+root = ET.fromstring(m.group(0))
+for node in root.iter("node"):
+    text = node.get("text")
+    if text:
+        print(text)
+'
     ;;
   wait)
     echo -n "waiting for boot…"
@@ -79,7 +104,7 @@ case "$cmd" in
     fi
     ;;
   *)
-    echo "usage: $0 {up|down|adb|wait|status}" >&2
+    echo "usage: $0 {up|down|adb|wait|status|text}" >&2
     exit 2
     ;;
 esac

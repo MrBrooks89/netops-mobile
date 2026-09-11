@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { useLocalSearchParams } from 'expo-router';
+import { Stack, useLocalSearchParams } from 'expo-router';
 import { Card, Screen, StyledText } from '../../src/ui/components';
 import { getTool } from '../../src/core/registry/registry';
 
@@ -24,5 +24,10 @@ export default function ToolRoute() {
   }
 
   const Component = tool.Component;
-  return <Component tool={tool} />;
+  return (
+    <>
+      <Stack.Screen options={{ title: tool.title }} />
+      <Component tool={tool} />
+    </>
+  );
 }

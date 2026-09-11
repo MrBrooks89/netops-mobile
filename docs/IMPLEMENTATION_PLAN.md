@@ -1,8 +1,14 @@
 # NetOps Mobile — Implementation Plan
 
-**Status:** Planning (no code implemented yet)
+**Status:** M0 complete · M1 complete · M2 next
 **Target:** React Native + Expo + TypeScript, Android-first on Fedora Linux, iOS later, optional Linux remote probe later
 **Prime directives:** simplicity, maintainability, independently-addable tool modules, small first milestone
+
+**Progress**
+- **M0 — Bootstrap:** done. Expo SDK 57 + expo-router, CNG dev client, ESLint/Prettier/Jest/CI, core skeleton (Result + ToolError, IpAddress v4/v6, tool registry), registry-driven dashboard.
+- **M1 — IPv4 tools:** done. Subnet, CIDR, wildcard and VLSM calculators + ports reference; pure-TS core (`core/ip/cidr`, `core/subnet`, `core/vlsm`, `core/ports`) with golden fixtures, property tests and CI-enforced ≥95% line coverage on the new modules; one-tap copy on every result value.
+- **M2 — Persistence:** next (SQLite, saved entities, history, export, settings).
+- Decisions taken during implementation are recorded in `docs/adr/`: ADR-001 (CNG + dev-client from day one), ADR-002 (hand-rolled UI primitives instead of react-native-paper).
 
 ---
 
@@ -665,7 +671,9 @@ Full iOS port; remote Linux probe (WebSocket agent + `RemoteProbeCapabilities`);
 - VLSM calculator produces correct greedy allocation tables (ranges, usable counts, waste) for all fixture sets, and reports `fits: false` cleanly when the base network is too small.
 - Ports reference is searchable by port number, service name, and protocol.
 - Every result value is copyable with one tap.
-- **Zero native code** — the app still runs in Expo Go.
+- **Zero custom native code** — no code under `modules/`, no third-party native
+  dependency. Expo SDK modules that Expo Go already ships are allowed (M1 added
+  `expo-clipboard` for one-tap copy), so the app still runs in Expo Go.
 - `core` test coverage ≥ 95% lines on new modules.
 - Dashboard groups tools by category; navigation to each tool works via the generic registry-driven route.
 

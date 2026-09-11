@@ -91,13 +91,7 @@ export interface ToolModule {
 
 export { parseIp, parseV4, parseV6 } from '../ip/ip';
 export type { IpAddress, IpV4Address, IpV6Address, IpFamily } from '../ip/ip';
-export {
-  asV4Cidr,
-  cidrToString,
-  parseCidr,
-  prefixToMaskV4,
-  wildcardMaskV4,
-} from '../ip/cidr';
+export { asV4Cidr, cidrToString, parseCidr, prefixToMaskV4, wildcardMaskV4 } from '../ip/cidr';
 export type { IpCidr, Ipv4Cidr } from '../ip/cidr';
 export { ok, err, type Result } from '../result/result';
 export { toolError, type ToolError, type ToolErrorCode } from '../result/toolError';

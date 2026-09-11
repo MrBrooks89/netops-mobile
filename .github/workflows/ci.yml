@@ -32,5 +32,5 @@ jobs:
       - name: Format check
         run: pnpm format:check
 
-      - name: Unit tests
-        run: pnpm test --ci
+      - name: Unit tests + core coverage thresholds
+        run: pnpm test:coverage --ci

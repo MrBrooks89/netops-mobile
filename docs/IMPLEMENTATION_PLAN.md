@@ -1,14 +1,14 @@
 # NetOps Mobile — Implementation Plan
 
-**Status:** M0 complete · M1 complete · M2 next
+**Status:** M0 complete · M1 complete · M2 complete · M3 next
 **Target:** React Native + Expo + TypeScript, Android-first on Fedora Linux, iOS later, optional Linux remote probe later
 **Prime directives:** simplicity, maintainability, independently-addable tool modules, small first milestone
 
 **Progress**
 - **M0 — Bootstrap:** done. Expo SDK 57 + expo-router, CNG dev client, ESLint/Prettier/Jest/CI, core skeleton (Result + ToolError, IpAddress v4/v6, tool registry), registry-driven dashboard.
 - **M1 — IPv4 tools:** done. Subnet, CIDR, wildcard and VLSM calculators + ports reference; pure-TS core (`core/ip/cidr`, `core/subnet`, `core/vlsm`, `core/ports`) with golden fixtures, property tests and CI-enforced ≥95% line coverage on the new modules; one-tap copy on every result value.
-- **M2 — Persistence:** next (SQLite, saved entities, history, export, settings).
-- Decisions taken during implementation are recorded in `docs/adr/`: ADR-001 (CNG + dev-client from day one), ADR-002 (hand-rolled UI primitives instead of react-native-paper).
+- **M2 — Persistence:** done. SQLite with a migration runner (`schema_migrations`, v1 schema + v2 indexes), hosts/networks repositories with tags and full CRUD, ports seeded from the bundled dataset, run history with a settings toggle and retention pruning, JSON/CSV/text exports through the Share sheet, and a Settings screen (theme, history, retention, local-data summary).
+- Decisions taken during implementation are recorded in `docs/adr/`: ADR-001 (CNG + dev-client from day one), ADR-002 (hand-rolled UI primitives instead of react-native-paper), ADR-003 (kv-store instead of MMKV, context instead of zustand at M2, real-SQLite tests via sql.js).
 
 ---
 

@@ -177,6 +177,7 @@ export function CidrCalculatorScreen({ tool }: ToolScreenProps) {
               selected={mode === m.id}
               onPress={() => setMode(m.id)}
               testID={`mode-${m.id}`}
+              radio
             />
           ))}
         </View>

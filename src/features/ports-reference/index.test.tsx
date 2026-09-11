@@ -72,6 +72,14 @@ describe('PortsReferenceScreen', () => {
     expect(queryByTestId('port-row-22-tcp')).toBeNull();
   });
 
+  it('reports the active protocol filter as a checked radio', async () => {
+    const { getByLabelText, getByTestId } = await renderPorts();
+    expect(getByLabelText('All').props.accessibilityState.checked).toBe(true);
+    await fireEvent.press(getByTestId('ports-filter-udp'));
+    expect(getByLabelText('UDP').props.accessibilityState.checked).toBe(true);
+    expect(getByLabelText('All').props.accessibilityState.checked).toBe(false);
+  });
+
   it('shows an empty state for no matches', async () => {
     const { getByTestId } = await renderPorts();
     await fireEvent.changeText(getByTestId('ports-search'), 'zzzznotaservice');

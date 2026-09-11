@@ -93,6 +93,7 @@ export function PortsReferenceScreen({ tool }: ToolScreenProps) {
               selected={proto === filter.id}
               onPress={() => setProto(filter.id)}
               testID={`ports-filter-${filter.id}`}
+              radio
             />
           ))}
         </View>

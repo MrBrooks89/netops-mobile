@@ -72,6 +72,14 @@ describe('CidrCalculatorScreen', () => {
     expect(getByTestId('cidr-summarise-error')).toBeTruthy();
   });
 
+  it('reports the active mode to assistive tech as a checked radio', async () => {
+    const { getByLabelText } = await renderWithApp(<CidrCalculatorScreen tool={tool} />);
+    // Chips are a single-choice group, so the selected one must be *checked*
+    // (Android only reports a selected state for checkable roles).
+    expect(getByLabelText('Convert').props.accessibilityState.checked).toBe(true);
+    expect(getByLabelText('Split into N').props.accessibilityState.checked).toBe(false);
+  });
+
   it('shows an inline error for an invalid network', async () => {
     const { getByTestId } = await renderWithApp(<CidrCalculatorScreen tool={tool} />);
     await fireEvent.changeText(getByTestId('cidr-input'), '10.0.0.0/33');

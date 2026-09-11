@@ -2,7 +2,8 @@
  * Settings tab — theme, history recording, retention and local-data controls.
  */
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
 import { Alert, View } from 'react-native';
 import type { ThemePreference } from '../../src/core/model/settings';
 import {
@@ -61,10 +62,14 @@ export default function SettingsTab() {
   // Load-on-mount effect. React Query (M3, plan 12) replaces this pattern for
   // networked operations; until then a screen-scoped load is the simplest
   // correct option, and the state updates happen after `await`.
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- load-on-mount; React Query replaces this pattern in M3 (plan §12)
-    void reload();
-  }, [reload]);
+  // Reload whenever the tab regains focus: history is written by the
+  // calculator screens and saved items can change from elsewhere, so a
+  // mount-only load would show stale data. React Query replaces this in M3.
+  useFocusEffect(
+    useCallback(() => {
+      void reload();
+    }, [reload]),
+  );
 
   const purgeHistory = () => {
     Alert.alert('Clear history', `Delete all ${counts.runs} recorded runs?`, [
@@ -97,6 +102,7 @@ export default function SettingsTab() {
               selected={settings.theme === theme.id}
               onPress={() => updateSettings({ theme: theme.id })}
               testID={`theme-${theme.id}`}
+              radio
             />
           ))}
         </View>
@@ -116,12 +122,14 @@ export default function SettingsTab() {
             selected={settings.historyEnabled}
             onPress={() => updateSettings({ historyEnabled: true })}
             testID="history-toggle-on"
+            radio
           />
           <Chip
             label="Recording off"
             selected={!settings.historyEnabled}
             onPress={() => updateSettings({ historyEnabled: false })}
             testID="history-toggle-off"
+            radio
           />
         </View>
 
@@ -134,6 +142,7 @@ export default function SettingsTab() {
               selected={settings.historyRetentionLimit === limit}
               onPress={() => updateSettings({ historyRetentionLimit: limit })}
               testID={`retention-${limit}`}
+              radio
             />
           ))}
         </View>

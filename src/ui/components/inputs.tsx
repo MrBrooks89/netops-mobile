@@ -117,25 +117,34 @@ export function Button({
   );
 }
 
-/** Selectable filter chip (protocol filters, calculator modes, examples). */
+/**
+ * Selectable chip: protocol filters, calculator modes, saved examples.
+ *
+ * `radio` marks a chip as one option in a single-choice group. Android's
+ * accessibility tree only reports a *checked* state for checkable roles, so a
+ * selected chip that stays `role="button"` is invisible to screen readers and
+ * to `getByRole('radio', { checked: true })` in tests.
+ */
 export function Chip({
   label,
   selected,
   onPress,
   testID,
+  radio = false,
 }: {
   label: string;
   selected?: boolean;
   onPress: () => void;
   testID?: string;
+  radio?: boolean;
 }) {
   const { theme } = useTheme();
   return (
     <Pressable
       testID={testID}
       onPress={onPress}
-      accessibilityRole="button"
-      accessibilityState={{ selected: !!selected }}
+      accessibilityRole={radio ? 'radio' : 'button'}
+      accessibilityState={radio ? { checked: !!selected } : { selected: !!selected }}
       accessibilityLabel={label}
       style={[
         styles.chip,

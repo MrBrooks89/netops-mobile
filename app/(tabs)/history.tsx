@@ -3,7 +3,8 @@
  * export through the share sheet.
  */
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
 import { Alert, View } from 'react-native';
 import type { RunRecord } from '../../src/core/model/entities';
 import { getTool } from '../../src/core/registry/registry';
@@ -53,10 +54,14 @@ export default function HistoryTab() {
   // Load-on-mount effect. React Query (M3, plan 12) replaces this pattern for
   // networked operations; until then a screen-scoped load is the simplest
   // correct option, and the state updates happen after `await`.
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- load-on-mount; React Query replaces this pattern in M3 (plan §12)
-    void reload();
-  }, [reload]);
+  // Reload whenever the tab regains focus: history is written by the
+  // calculator screens and saved items can change from elsewhere, so a
+  // mount-only load would show stale data. React Query replaces this in M3.
+  useFocusEffect(
+    useCallback(() => {
+      void reload();
+    }, [reload]),
+  );
 
   const share = useCallback(
     async (format: ExportFormat) => {

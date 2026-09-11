@@ -22,7 +22,10 @@ import { ThemeProvider } from '../src/ui/components';
 import { createMemorySettingsStore } from './memorySettingsStore';
 import { createTestDatabase, type TestDatabase } from './sqljsDriver';
 
-export async function createTestAppData(overrides: Partial<AppSettings> = {}): Promise<{
+export async function createTestAppData(
+  overrides: Partial<AppSettings> = {},
+  options: { seedPorts?: boolean } = {},
+): Promise<{
   db: TestDatabase;
   data: AppData;
   appSettings: AppSettings;
@@ -33,7 +36,9 @@ export async function createTestAppData(overrides: Partial<AppSettings> = {}): P
 
   const settings = createMemorySettingsStore();
   const ports = createPortRepository(db, settings);
-  await ports.ensureSeeded();
+  // Seeding the full dataset is only needed by tests that read it; leaving it
+  // out keeps the calculator screen tests fast.
+  if (options.seedPorts) await ports.ensureSeeded();
 
   const appSettings: AppSettings = { ...DEFAULT_SETTINGS, ...overrides };
   const data: AppData = {
@@ -51,9 +56,11 @@ export async function createTestAppData(overrides: Partial<AppSettings> = {}): P
 /** Render a screen inside a working app context backed by in-memory SQLite. */
 export async function renderWithApp(
   ui: React.ReactElement,
-  options: { appSettings?: Partial<AppSettings> } = {},
+  options: { appSettings?: Partial<AppSettings>; seedPorts?: boolean } = {},
 ) {
-  const { db, data, appSettings } = await createTestAppData(options.appSettings);
+  const { db, data, appSettings } = await createTestAppData(options.appSettings, {
+    seedPorts: options.seedPorts,
+  });
   const value: AppContextValue = {
     settings: data.settings,
     appSettings,

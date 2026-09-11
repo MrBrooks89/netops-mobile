@@ -12,11 +12,30 @@ module.exports = {
   transformIgnorePatterns: [
     'node_modules/(?!(.pnpm|(jest-)?react-native|@react-native(-community)?|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@sentry/react-native|native-base|react-native-svg))',
   ],
-  collectCoverageFrom: ['src/core/**/*.ts', '!src/core/**/*.test.ts'],
+  collectCoverageFrom: [
+    'src/core/**/*.ts',
+    '!src/core/**/*.test.ts',
+    // Data-layer modules with real logic. The native edges (db/driver.ts,
+    // export/share.ts, settings/kvStore.ts) are excluded: they cannot run under
+    // Jest and are verified on a device instead.
+    'src/data/db/migrations.ts',
+    'src/data/db/migrate.ts',
+    'src/data/repositories/*.ts',
+    'src/data/settings/appSettings.ts',
+    'src/data/settings/store.ts',
+    'src/data/export/codecs.ts',
+    '!src/**/*.test.ts',
+  ],
   coverageThreshold: {
     './src/core/ip/cidr.ts': { lines: 95 },
     './src/core/subnet/': { lines: 95 },
     './src/core/vlsm/': { lines: 95 },
     './src/core/ports/': { lines: 95 },
+    './src/core/validation/': { lines: 95 },
+    './src/core/util/': { lines: 95 },
+    './src/data/db/': { lines: 95 },
+    './src/data/repositories/': { lines: 95 },
+    './src/data/settings/': { lines: 95 },
+    './src/data/export/codecs.ts': { lines: 95 },
   },
 };

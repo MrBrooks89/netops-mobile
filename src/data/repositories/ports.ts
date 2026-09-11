@@ -50,6 +50,12 @@ const storageError = (cause: unknown, action: string): ToolError => {
   });
 };
 
+/**
+ * Rows per INSERT when seeding. 200 rows × 4 params = 800 bound variables,
+ * comfortably under SQLite's classic 999-variable limit.
+ */
+export const INSERT_CHUNK_ROWS = 200;
+
 const isProto = (value: string): value is PortProto =>
   value === 'tcp' || value === 'udp' || value === 'sctp';
 
@@ -89,10 +95,20 @@ export function createPortRepository(db: SqlDriver, meta?: SettingsStore): PortR
           // Rewrite wholesale: the bundled dataset is the source of truth, so a
           // removed or renamed port must not survive an update.
           await tx.exec('DELETE FROM ports');
-          for (const entry of entries) {
+          // Multi-row inserts. Chunked because each row binds four parameters
+          // and older SQLite builds cap a statement at 999 variables.
+          for (let offset = 0; offset < entries.length; offset += INSERT_CHUNK_ROWS) {
+            const chunk = entries.slice(offset, offset + INSERT_CHUNK_ROWS);
+            const placeholders = chunk.map(() => '(?, ?, ?, ?)').join(', ');
+            const params = chunk.flatMap((entry) => [
+              entry.port,
+              entry.proto,
+              entry.service,
+              entry.description,
+            ]);
             await tx.run(
-              'INSERT INTO ports (port, proto, service, description) VALUES (?, ?, ?, ?)',
-              [entry.port, entry.proto, entry.service, entry.description],
+              `INSERT INTO ports (port, proto, service, description) VALUES ${placeholders}`,
+              params,
             );
           }
         });

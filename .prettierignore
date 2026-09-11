@@ -1,0 +1,13 @@
+dist/
+node_modules/
+.tools/
+.toolcache/
+.expo/
+android/
+ios/
+coverage/
+docs/
+scripts/
+docker/
+*.md
+pnpm-lock.yaml

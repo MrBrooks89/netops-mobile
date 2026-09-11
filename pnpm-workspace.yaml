@@ -1,0 +1,4 @@
+allowBuilds:
+  '@parcel/watcher': true
+  unrs-resolver: true
+storeDir: /home/mrbrooks/Projects/netops-mobile/.tools/pnpm-store

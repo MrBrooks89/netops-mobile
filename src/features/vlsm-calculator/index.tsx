@@ -31,6 +31,7 @@ import {
 } from '../../core/vlsm/vlsm';
 import { addressesLabel, hostsLabel } from '../../core/util/format';
 import { parseV4CidrInput } from '../_shared/input';
+import { useCalculatorHistory } from '../_shared/useCalculatorHistory';
 
 interface RequirementRow {
   readonly id: number;
@@ -93,6 +94,16 @@ export function VlsmCalculatorScreen({ tool }: ToolScreenProps) {
   const parsed = parseV4CidrInput(base);
 
   const result: VlsmState | null = parsed.state === 'valid' ? computeVlsm(parsed.cidr, rows) : null;
+
+  useCalculatorHistory({
+    toolId: 'vlsm-calculator',
+    input: `${base}|${rows.map((row) => `${row.name}:${row.hosts}`).join(',')}`,
+    summary:
+      result?.kind === 'report'
+        ? `${result.report.allocations.length} subnets in ${base.trim()}`
+        : null,
+    detail: result?.kind === 'report' ? result.report : null,
+  });
 
   const inputError = parsed.state === 'error' ? parsed.message : null;
   const rowError = result?.kind === 'rowError' ? result.message : null;

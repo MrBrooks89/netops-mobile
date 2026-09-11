@@ -27,6 +27,7 @@ import { splitInto, subnetCount, subnetsForHosts, supernetOf } from '../../core/
 import { usableHostCount } from '../../core/subnet/subnet';
 import { addressesLabel, hostsLabel } from '../../core/util/format';
 import { parseV4CidrInput } from '../_shared/input';
+import { useCalculatorHistory } from '../_shared/useCalculatorHistory';
 
 type Mode = 'convert' | 'split' | 'hosts' | 'summarise';
 
@@ -145,6 +146,23 @@ export function CidrCalculatorScreen({ tool }: ToolScreenProps) {
     mode === 'summarise' ? computeSummarise(summariseInput) : null;
 
   const inputError = parsed.state === 'error' ? parsed.message : null;
+  const historySummary =
+    mode === 'convert' && parsed.state === 'valid'
+      ? cidrToString(parsed.cidr)
+      : mode === 'split' && splitState?.kind === 'subnets'
+        ? `${splitState.subnets.length} subnets`
+        : mode === 'hosts' && hostsState?.kind === 'result'
+          ? `${hostsState.subnets.length} x /${hostsState.childPrefix}`
+          : mode === 'summarise' && summariseState?.kind === 'result'
+            ? cidrToString(summariseState.supernet)
+            : null;
+
+  useCalculatorHistory({
+    toolId: 'cidr-calculator',
+    input: `${mode}|${input}|${count}|${hosts}|${summariseInput}`,
+    summary: historySummary,
+    detail: historySummary === null ? null : { mode },
+  });
 
   return (
     <ScrollScreen testID="cidr-screen">

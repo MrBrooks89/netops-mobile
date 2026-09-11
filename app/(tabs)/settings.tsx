@@ -1,21 +1,173 @@
 /**
- * Settings tab — theme, DoH provider, timeouts, retention (M2+).
+ * Settings tab — theme, history recording, retention and local-data controls.
  */
 
-import React from 'react';
-import { Card, Screen, StyledText } from '../../src/ui/components';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Alert, View } from 'react-native';
+import type { ThemePreference } from '../../src/core/model/settings';
+import {
+  DEFAULT_HISTORY_RETENTION,
+  RETENTION_MAX,
+  RETENTION_MIN,
+} from '../../src/data/settings/appSettings';
+import { useAppData, useAppSettings } from '../../src/app/AppProviders';
+import {
+  Button,
+  Card,
+  Chip,
+  Note,
+  ScrollScreen,
+  SectionTitle,
+  StyledText,
+  ToolHeader,
+  ValueRow,
+} from '../../src/ui/components';
 
-export default function Settings() {
+const THEMES: readonly { id: ThemePreference; label: string }[] = [
+  { id: 'system', label: 'System' },
+  { id: 'light', label: 'Light' },
+  { id: 'dark', label: 'Dark' },
+];
+
+const RETENTION_CHOICES: readonly number[] = [
+  100,
+  250,
+  DEFAULT_HISTORY_RETENTION,
+  1000,
+  RETENTION_MAX,
+];
+
+export default function SettingsTab() {
+  const data = useAppData();
+  const { settings, updateSettings } = useAppSettings();
+  const [counts, setCounts] = useState({ hosts: 0, networks: 0, runs: 0, ports: 0 });
+  const [message, setMessage] = useState<string | null>(null);
+
+  const reload = useCallback(async () => {
+    const [hosts, networks, runs, ports] = await Promise.all([
+      data.hosts.count(),
+      data.networks.count(),
+      data.runs.count(),
+      data.ports.count(),
+    ]);
+    setCounts({
+      hosts: hosts.ok ? hosts.value : 0,
+      networks: networks.ok ? networks.value : 0,
+      runs: runs.ok ? runs.value : 0,
+      ports: ports.ok ? ports.value : 0,
+    });
+  }, [data]);
+
+  // Load-on-mount effect. React Query (M3, plan 12) replaces this pattern for
+  // networked operations; until then a screen-scoped load is the simplest
+  // correct option, and the state updates happen after `await`.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- load-on-mount; React Query replaces this pattern in M3 (plan §12)
+    void reload();
+  }, [reload]);
+
+  const purgeHistory = () => {
+    Alert.alert('Clear history', `Delete all ${counts.runs} recorded runs?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete all',
+        style: 'destructive',
+        onPress: async () => {
+          const result = await data.runs.clear();
+          setMessage(result.ok ? `Deleted ${result.value} runs.` : result.error.message);
+          await reload();
+        },
+      },
+    ]);
+  };
+
   return (
-    <Screen>
-      <StyledText style={{ fontSize: 22, fontWeight: '800', marginBottom: 12 }}>
-        Settings
-      </StyledText>
+    <ScrollScreen testID="settings-screen">
+      <ToolHeader title="Settings" description="Appearance, history and local data" />
+
+      {message && <Note testID="settings-message">{message}</Note>}
+
       <Card>
-        <StyledText dim>
-          Settings (theme, DoH provider, timeouts, history retention) arrive in Milestone 2.
+        <SectionTitle>Appearance</SectionTitle>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+          {THEMES.map((theme) => (
+            <Chip
+              key={theme.id}
+              label={theme.label}
+              selected={settings.theme === theme.id}
+              onPress={() => updateSettings({ theme: theme.id })}
+              testID={`theme-${theme.id}`}
+            />
+          ))}
+        </View>
+        <StyledText dim style={{ fontSize: 12 }}>
+          System follows your device&apos;s light or dark setting.
         </StyledText>
       </Card>
-    </Screen>
+
+      <Card>
+        <SectionTitle>History</SectionTitle>
+        <StyledText dim style={{ fontSize: 13, marginBottom: 8 }}>
+          Calculator runs are recorded locally when the input is valid. Nothing leaves the device.
+        </StyledText>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+          <Chip
+            label="Recording on"
+            selected={settings.historyEnabled}
+            onPress={() => updateSettings({ historyEnabled: true })}
+            testID="history-toggle-on"
+          />
+          <Chip
+            label="Recording off"
+            selected={!settings.historyEnabled}
+            onPress={() => updateSettings({ historyEnabled: false })}
+            testID="history-toggle-off"
+          />
+        </View>
+
+        <SectionTitle>Keep at most</SectionTitle>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+          {RETENTION_CHOICES.map((limit) => (
+            <Chip
+              key={limit}
+              label={String(limit)}
+              selected={settings.historyRetentionLimit === limit}
+              onPress={() => updateSettings({ historyRetentionLimit: limit })}
+              testID={`retention-${limit}`}
+            />
+          ))}
+        </View>
+        <StyledText dim style={{ fontSize: 12, marginBottom: 10 }}>
+          Older runs are pruned automatically ({RETENTION_MIN}–{RETENTION_MAX}).
+        </StyledText>
+
+        <View style={{ alignItems: 'flex-start' }}>
+          <Button
+            title="Clear history now"
+            variant="danger"
+            onPress={purgeHistory}
+            disabled={counts.runs === 0}
+            testID="settings-clear-history"
+          />
+        </View>
+      </Card>
+
+      <Card>
+        <SectionTitle>Stored on this device</SectionTitle>
+        <ValueRow label="Saved hosts" value={String(counts.hosts)} />
+        <ValueRow label="Saved networks" value={String(counts.networks)} />
+        <ValueRow label="History entries" value={String(counts.runs)} />
+        <ValueRow label="Ports reference" value={String(counts.ports)} />
+      </Card>
+
+      <Card>
+        <SectionTitle>About</SectionTitle>
+        <ValueRow label="App" value="NetOps Mobile" />
+        <ValueRow label="Milestone" value="M2 — persistence" />
+        <StyledText dim style={{ fontSize: 12, marginTop: 8 }}>
+          All data stays on this device. There are no accounts and no telemetry.
+        </StyledText>
+      </Card>
+    </ScrollScreen>
   );
 }

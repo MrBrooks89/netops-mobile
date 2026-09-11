@@ -21,7 +21,7 @@ import { readSettings, writeSettings } from '../data/settings/appSettings';
 import type { SettingsStore } from '../data/settings/store';
 import { Card, Screen, StyledText, ThemeProvider, useTheme } from '../ui/components';
 
-interface AppContextValue {
+export interface AppContextValue {
   readonly settings: SettingsStore;
   readonly appSettings: AppSettings;
   readonly updateSettings: (patch: Partial<AppSettings>) => void;
@@ -49,6 +49,21 @@ export function useAppSettings(): {
 } {
   const { appSettings, updateSettings } = useApp();
   return { settings: appSettings, updateSettings };
+}
+
+/**
+ * Raw provider, exported so tests can supply in-memory repositories instead of
+ * opening the real database. Production code always goes through
+ * <AppProviders>, which is the only thing that opens storage.
+ */
+export function AppContextProvider({
+  value,
+  children,
+}: {
+  value: AppContextValue;
+  children: React.ReactNode;
+}) {
+  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
 
 type BootState =

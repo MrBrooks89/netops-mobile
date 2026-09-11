@@ -2,9 +2,9 @@
  * Ports reference — searchable list of common TCP/UDP ports.
  *
  * Search matches port number (exact first, then prefix), service name, and
- * description, and accepts protocol tokens ("udp 53"). All matching happens in
- * core/ports, so the dataset can move to SQLite in M2 without touching this
- * screen.
+ * description, and accepts protocol tokens ("udp 53"). Rows come from the
+ * database (seeded from the bundled dataset at startup) while ranking stays in
+ * core/ports, so there is still one owner for "what a good match looks like".
  */
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
@@ -22,14 +22,9 @@ import {
   ToolHeader,
   useTheme,
 } from '../../ui/components';
+import { useAppData } from '../../app/AppProviders';
 import type { ToolScreenProps } from '../../core/registry/types';
-import {
-  PORTS,
-  portStats,
-  searchPorts,
-  type PortEntry,
-  type PortProto,
-} from '../../core/ports/ports';
+import { portStats, searchPorts, type PortEntry, type PortProto } from '../../core/ports/ports';
 import { groupDigits } from '../../core/util/format';
 
 type ProtoFilter = 'all' | PortProto;
@@ -40,17 +35,41 @@ const FILTERS: { id: ProtoFilter; label: string }[] = [
   { id: 'udp', label: 'UDP' },
 ];
 
-const STATS = portStats(PORTS);
-
 export function PortsReferenceScreen({ tool }: ToolScreenProps) {
+  const data = useAppData();
   const [query, setQuery] = useState('');
   const [proto, setProto] = useState<ProtoFilter>('all');
+  const [entries, setEntries] = useState<readonly PortEntry[] | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  const results = searchPorts(query, { proto });
+  // The database is the source of truth (seeded from the bundled dataset at
+  // startup); ranking stays in core/ports, and filtering runs against the
+  // loaded rows so typing stays synchronous.
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const result = await data.ports.search('');
+      if (cancelled) return;
+      if (result.ok) setEntries(result.value);
+      else setLoadError(result.error.message);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [data]);
+
+  const results = entries === null ? [] : searchPorts(query, { proto, entries });
+  const stats = portStats(entries ?? []);
 
   return (
     <Screen testID="ports-screen">
       <ToolHeader title={tool.title} description={tool.description} />
+
+      {loadError && (
+        <Note tone="error" testID="ports-load-error">
+          {loadError}
+        </Note>
+      )}
 
       <Card>
         <Field
@@ -58,7 +77,11 @@ export function PortsReferenceScreen({ tool }: ToolScreenProps) {
           value={query}
           onChangeText={setQuery}
           placeholder="443, ssh, udp 53…"
-          hint={`${groupDigits(STATS.total)} ports · ${groupDigits(STATS.tcp)} TCP · ${groupDigits(STATS.udp)} UDP`}
+          hint={
+            entries === null
+              ? 'Loading the port reference…'
+              : `${groupDigits(stats.total)} ports · ${groupDigits(stats.tcp)} TCP · ${groupDigits(stats.udp)} UDP`
+          }
           testID="ports-search"
         />
         <SectionTitle>Protocol</SectionTitle>

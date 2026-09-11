@@ -19,6 +19,7 @@ import type { ToolScreenProps } from '../../core/registry/types';
 import { subnetReport } from '../../core/subnet/subnet';
 import { addressesLabel, hostsLabel } from '../../core/util/format';
 import { parseV4CidrInput } from '../_shared/input';
+import { useCalculatorHistory } from '../_shared/useCalculatorHistory';
 
 const EXAMPLES = [
   '192.168.1.10/24',
@@ -37,6 +38,13 @@ export function SubnetCalculatorScreen({ tool }: ToolScreenProps) {
   // React Compiler memoises the component where it matters.
   const parsed = parseV4CidrInput(input);
   const report = parsed.state === 'valid' ? subnetReport(parsed.cidr) : null;
+
+  useCalculatorHistory({
+    toolId: 'subnet-calculator',
+    input,
+    summary: report ? report.cidrText : null,
+    detail: report,
+  });
 
   return (
     <ScrollScreen testID="subnet-screen">

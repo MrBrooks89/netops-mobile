@@ -1,7 +1,8 @@
 import React from 'react';
-import { fireEvent, render } from '@testing-library/react-native';
+import { fireEvent } from '@testing-library/react-native';
 import * as Clipboard from 'expo-clipboard';
 import type { ToolModule } from '../../core/registry/types';
+import { renderWithApp } from '../../../test-utils/appTestKit';
 import { SubnetCalculatorScreen } from './index';
 
 const tool: ToolModule = {
@@ -20,7 +21,7 @@ beforeEach(() => setStringAsync.mockClear());
 
 describe('SubnetCalculatorScreen', () => {
   it('shows the default report for the seeded example', async () => {
-    const { getByText } = await render(<SubnetCalculatorScreen tool={tool} />);
+    const { getByText } = await renderWithApp(<SubnetCalculatorScreen tool={tool} />);
     expect(getByText('Subnet Calculator')).toBeTruthy();
     expect(getByText('192.168.1.0')).toBeTruthy(); // network
     expect(getByText('255.255.255.0')).toBeTruthy(); // netmask
@@ -30,7 +31,7 @@ describe('SubnetCalculatorScreen', () => {
   });
 
   it('recomputes when the input changes', async () => {
-    const { getByTestId, getByText } = await render(<SubnetCalculatorScreen tool={tool} />);
+    const { getByTestId, getByText } = await renderWithApp(<SubnetCalculatorScreen tool={tool} />);
     await fireEvent.changeText(getByTestId('subnet-input'), '10.0.0.0/8');
     expect(getByText('10.0.0.0')).toBeTruthy();
     expect(getByText('10.255.255.255')).toBeTruthy();
@@ -38,32 +39,34 @@ describe('SubnetCalculatorScreen', () => {
   });
 
   it('shows an inline error for invalid input', async () => {
-    const { getByTestId, queryByText } = await render(<SubnetCalculatorScreen tool={tool} />);
+    const { getByTestId, queryByText } = await renderWithApp(
+      <SubnetCalculatorScreen tool={tool} />,
+    );
     await fireEvent.changeText(getByTestId('subnet-input'), '192.168.1.0/33');
     expect(getByTestId('subnet-input-error')).toBeTruthy();
     expect(queryByText('255.255.255.0')).toBeNull();
   });
 
   it('shows an empty state when the input is cleared', async () => {
-    const { getByTestId } = await render(<SubnetCalculatorScreen tool={tool} />);
+    const { getByTestId } = await renderWithApp(<SubnetCalculatorScreen tool={tool} />);
     await fireEvent.changeText(getByTestId('subnet-input'), '');
     expect(getByTestId('subnet-empty')).toBeTruthy();
   });
 
   it('explains IPv6 input rather than failing silently', async () => {
-    const { getByTestId } = await render(<SubnetCalculatorScreen tool={tool} />);
+    const { getByTestId } = await renderWithApp(<SubnetCalculatorScreen tool={tool} />);
     await fireEvent.changeText(getByTestId('subnet-input'), '2001:db8::/32');
     expect(getByTestId('subnet-input-error')).toBeTruthy();
   });
 
   it('copies a value when its copy button is tapped', async () => {
-    const { getByTestId } = await render(<SubnetCalculatorScreen tool={tool} />);
+    const { getByTestId } = await renderWithApp(<SubnetCalculatorScreen tool={tool} />);
     await fireEvent.press(getByTestId('copy-Netmask'));
     expect(setStringAsync).toHaveBeenCalledWith('255.255.255.0');
   });
 
   it('renders RFC 3021 detail for a /31', async () => {
-    const { getByTestId, getByText } = await render(<SubnetCalculatorScreen tool={tool} />);
+    const { getByTestId, getByText } = await renderWithApp(<SubnetCalculatorScreen tool={tool} />);
     await fireEvent.changeText(getByTestId('subnet-input'), '192.168.1.1/31');
     expect(getByText('none (RFC 3021)')).toBeTruthy();
     expect(getByText('2 hosts')).toBeTruthy();

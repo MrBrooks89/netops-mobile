@@ -20,6 +20,7 @@ import type { ToolScreenProps } from '../../core/registry/types';
 import { prefixToMaskV4, wildcardMaskV4 } from '../../core/ip/cidr';
 import { binaryOctets, usableHostCount } from '../../core/subnet/subnet';
 import { hostsLabel } from '../../core/util/format';
+import { useCalculatorHistory } from '../_shared/useCalculatorHistory';
 import { aclForm, parseWildcardInput } from './parse';
 
 const EXAMPLES = ['/24', '255.255.255.0', '192.168.1.0/24', '255.255.255.252', '/31', '/32', '/0'];
@@ -29,6 +30,13 @@ export function WildcardMaskScreen({ tool }: ToolScreenProps) {
 
   const parsed = parseWildcardInput(input);
   const prefix = parsed.state === 'valid' ? parsed.prefix : null;
+
+  useCalculatorHistory({
+    toolId: 'wildcard-mask-calculator',
+    input,
+    summary: prefix === null ? null : `/${prefix} → ${wildcardMaskV4(prefix).value}`,
+    detail: prefix === null ? null : { prefix, wildcard: wildcardMaskV4(prefix).value },
+  });
 
   return (
     <ScrollScreen testID="wildcard-screen">

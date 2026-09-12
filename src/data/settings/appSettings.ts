@@ -6,6 +6,7 @@
  * default rather than propagate into the UI.
  */
 
+import { DOH_PROVIDERS, type DohProviderId } from '../../core/dns/types';
 import type { AppSettings, ThemePreference } from '../../core/model/settings';
 import type { SettingsStore } from './store';
 
@@ -15,6 +16,8 @@ export const SETTINGS_KEYS = {
   theme: 'settings.theme',
   historyEnabled: 'settings.historyEnabled',
   historyRetentionLimit: 'settings.historyRetentionLimit',
+  dohProvider: 'settings.dohProvider',
+  customDohUrl: 'settings.customDohUrl',
 } as const;
 
 export const RETENTION_MIN = 10;
@@ -27,6 +30,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   theme: 'system',
   historyEnabled: true,
   historyRetentionLimit: DEFAULT_HISTORY_RETENTION,
+  dohProvider: 'cloudflare',
+  customDohUrl: '',
 };
 
 export function parseTheme(raw: string | null): ThemePreference {
@@ -49,6 +54,13 @@ export function parseRetention(raw: string | null): number {
   return Math.min(RETENTION_MAX, Math.max(RETENTION_MIN, value));
 }
 
+/** Only the providers we ship, or a custom endpoint, are valid values. */
+export function parseDohProvider(raw: string | null): DohProviderId {
+  if (raw === 'custom') return 'custom';
+  if (raw !== null && raw in DOH_PROVIDERS) return raw as DohProviderId;
+  return DEFAULT_SETTINGS.dohProvider;
+}
+
 export function readSettings(store: SettingsStore): AppSettings {
   return {
     theme: parseTheme(store.get(SETTINGS_KEYS.theme)),
@@ -57,6 +69,8 @@ export function readSettings(store: SettingsStore): AppSettings {
       DEFAULT_SETTINGS.historyEnabled,
     ),
     historyRetentionLimit: parseRetention(store.get(SETTINGS_KEYS.historyRetentionLimit)),
+    dohProvider: parseDohProvider(store.get(SETTINGS_KEYS.dohProvider)),
+    customDohUrl: store.get(SETTINGS_KEYS.customDohUrl) ?? DEFAULT_SETTINGS.customDohUrl,
   };
 }
 
@@ -73,10 +87,16 @@ export function writeSettings(store: SettingsStore, patch: Partial<AppSettings>)
       patch.historyRetentionLimit === undefined
         ? current.historyRetentionLimit
         : parseRetention(String(patch.historyRetentionLimit)),
+    dohProvider:
+      patch.dohProvider === undefined ? current.dohProvider : parseDohProvider(patch.dohProvider),
+    customDohUrl:
+      patch.customDohUrl === undefined ? current.customDohUrl : patch.customDohUrl.trim(),
   };
 
   store.set(SETTINGS_KEYS.theme, next.theme);
   store.set(SETTINGS_KEYS.historyEnabled, String(next.historyEnabled));
   store.set(SETTINGS_KEYS.historyRetentionLimit, String(next.historyRetentionLimit));
+  store.set(SETTINGS_KEYS.dohProvider, next.dohProvider);
+  store.set(SETTINGS_KEYS.customDohUrl, next.customDohUrl);
   return next;
 }

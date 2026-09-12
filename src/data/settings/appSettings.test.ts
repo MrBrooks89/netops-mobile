@@ -1,6 +1,7 @@
 import { createMemorySettingsStore } from '../../../test-utils/memorySettingsStore';
 import {
   DEFAULT_SETTINGS,
+  parseDohProvider,
   RETENTION_MAX,
   RETENTION_MIN,
   SETTINGS_KEYS,
@@ -51,21 +52,55 @@ describe('reading and writing settings', () => {
       theme: 'light',
       historyEnabled: false,
       historyRetentionLimit: 120,
+      dohProvider: 'google',
+      customDohUrl: 'https://doh.example/q',
     });
-    expect(saved).toEqual({ theme: 'light', historyEnabled: false, historyRetentionLimit: 120 });
+    expect(saved).toEqual({
+      theme: 'light',
+      historyEnabled: false,
+      historyRetentionLimit: 120,
+      dohProvider: 'google',
+      customDohUrl: 'https://doh.example/q',
+    });
     expect(readSettings(store)).toEqual(saved);
     expect(store.snapshot()).toEqual({
       [SETTINGS_KEYS.theme]: 'light',
       [SETTINGS_KEYS.historyEnabled]: 'false',
       [SETTINGS_KEYS.historyRetentionLimit]: '120',
+      [SETTINGS_KEYS.dohProvider]: 'google',
+      [SETTINGS_KEYS.customDohUrl]: 'https://doh.example/q',
     });
   });
 
   it('applies partial updates without disturbing other values', () => {
     const store = createMemorySettingsStore();
-    writeSettings(store, { theme: 'dark', historyRetentionLimit: 50 });
+    writeSettings(store, { theme: 'dark', historyRetentionLimit: 50, dohProvider: 'google' });
     const next = writeSettings(store, { historyEnabled: false });
-    expect(next).toEqual({ theme: 'dark', historyEnabled: false, historyRetentionLimit: 50 });
+    expect(next).toEqual({
+      theme: 'dark',
+      historyEnabled: false,
+      historyRetentionLimit: 50,
+      dohProvider: 'google',
+      customDohUrl: '',
+    });
+  });
+
+  it('round-trips the DoH provider choice and trims a custom URL', () => {
+    const store = createMemorySettingsStore();
+    const saved = writeSettings(store, {
+      dohProvider: 'custom',
+      customDohUrl: '  https://doh.example/q  ',
+    });
+    expect(saved.dohProvider).toBe('custom');
+    expect(saved.customDohUrl).toBe('https://doh.example/q');
+    expect(parseDohProvider(store.get(SETTINGS_KEYS.dohProvider))).toBe('custom');
+  });
+
+  it('falls back to the default provider for an unknown stored value', () => {
+    expect(parseDohProvider('nope')).toBe(DEFAULT_SETTINGS.dohProvider);
+    expect(parseDohProvider(null)).toBe(DEFAULT_SETTINGS.dohProvider);
+    expect(parseDohProvider('google')).toBe('google');
+    expect(parseDohProvider('custom')).toBe('custom');
   });
 
   it('normalises invalid input on write', () => {
@@ -80,11 +115,14 @@ describe('reading and writing settings', () => {
       [SETTINGS_KEYS.theme]: 'dark',
       [SETTINGS_KEYS.historyEnabled]: 'yes-please',
       [SETTINGS_KEYS.historyRetentionLimit]: '99999',
+      [SETTINGS_KEYS.dohProvider]: 'some-old-provider',
     });
     expect(readSettings(store)).toEqual({
       theme: 'dark',
       historyEnabled: DEFAULT_SETTINGS.historyEnabled,
       historyRetentionLimit: RETENTION_MAX,
+      dohProvider: DEFAULT_SETTINGS.dohProvider,
+      customDohUrl: '',
     });
   });
 });

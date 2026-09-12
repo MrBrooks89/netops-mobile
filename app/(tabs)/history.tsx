@@ -7,6 +7,7 @@ import React, { useCallback, useState } from 'react';
 import { router, useFocusEffect } from 'expo-router';
 import { Alert, View } from 'react-native';
 import type { RunRecord } from '../../src/core/model/entities';
+import type { ToolId } from '../../src/core/registry/types';
 import { getTool } from '../../src/core/registry/registry';
 import { exportRunHistory, type ExportFormat } from '../../src/data/export/codecs';
 import { shareExport } from '../../src/data/export/share';
@@ -40,16 +41,34 @@ export default function HistoryTab() {
   const [runs, setRuns] = useState<readonly RunRecord[]>([]);
   const [total, setTotal] = useState(0);
   const [message, setMessage] = useState<string | null>(null);
+  const [toolFilter, setToolFilter] = useState<ToolId | 'all'>('all');
+  // Which tools to offer as filters. Kept while a filter is active, otherwise it
+  // would collapse to the selected tool alone.
+  const [knownTools, setKnownTools] = useState<readonly ToolId[]>([]);
 
   const reload = useCallback(async () => {
     const [list, count] = await Promise.all([
-      data.runs.list({ limit: DISPLAY_LIMIT }),
+      data.runs.list(
+        toolFilter === 'all'
+          ? { limit: DISPLAY_LIMIT }
+          : { toolId: toolFilter, limit: DISPLAY_LIMIT },
+      ),
       data.runs.count(),
     ]);
-    if (list.ok) setRuns(list.value);
-    else setMessage(list.error.message);
+    if (list.ok) {
+      setRuns(list.value);
+      if (toolFilter === 'all') {
+        setKnownTools((previous) => {
+          const seen = new Set(previous);
+          for (const run of list.value) if (!seen.has(run.toolId)) seen.add(run.toolId);
+          return [...seen];
+        });
+      }
+    } else {
+      setMessage(list.error.message);
+    }
     if (count.ok) setTotal(count.value);
-  }, [data]);
+  }, [data, toolFilter]);
 
   // Load-on-mount effect. React Query (M3, plan 12) replaces this pattern for
   // networked operations; until then a screen-scoped load is the simplest
@@ -117,10 +136,37 @@ export default function HistoryTab() {
 
       {message && <Note testID="history-message">{message}</Note>}
 
+      {knownTools.length > 0 && (
+        <Card>
+          <SectionTitle>Filter by tool</SectionTitle>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+            <Chip
+              label="All"
+              selected={toolFilter === 'all'}
+              onPress={() => setToolFilter('all')}
+              testID="history-filter-all"
+              radio
+            />
+            {knownTools.map((toolId) => (
+              <Chip
+                key={toolId}
+                label={toolTitle(toolId)}
+                selected={toolFilter === toolId}
+                onPress={() => setToolFilter(toolId)}
+                testID={`history-filter-${toolId}`}
+                radio
+              />
+            ))}
+          </View>
+        </Card>
+      )}
+
       {runs.length === 0 ? (
         <Card>
           <StyledText dim testID="history-empty">
-            No runs yet. Calculator results are recorded here once you have a valid input.
+            {toolFilter === 'all'
+              ? 'No runs yet. Calculator results and lookups are recorded here.'
+              : `No runs recorded for ${toolTitle(toolFilter)} yet.`}
           </StyledText>
         </Card>
       ) : (

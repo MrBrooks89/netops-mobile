@@ -1,0 +1,190 @@
+{
+  "A example.com": {
+    "Question": [
+      {
+        "name": "example.com.",
+        "type": 1
+      }
+    ],
+    "Answer": [
+      {
+        "name": "example.com.",
+        "data": "172.66.147.243",
+        "TTL": 149,
+        "type": 1,
+        "class": 1
+      },
+      {
+        "name": "example.com.",
+        "data": "104.20.23.154",
+        "TTL": 149,
+        "type": 1,
+        "class": 1
+      }
+    ],
+    "Extra": null,
+    "TC": false,
+    "RD": true,
+    "RA": true,
+    "AD": false,
+    "CD": false,
+    "Status": 0
+  },
+  "AAAA example.com": {
+    "Question": [
+      {
+        "name": "example.com.",
+        "type": 28
+      }
+    ],
+    "Answer": [
+      {
+        "name": "example.com.",
+        "data": "2606:4700:10::6814:179a",
+        "TTL": 300,
+        "type": 28,
+        "class": 1
+      },
+      {
+        "name": "example.com.",
+        "data": "2606:4700:10::ac42:93f3",
+        "TTL": 300,
+        "type": 28,
+        "class": 1
+      }
+    ],
+    "Extra": null,
+    "TC": false,
+    "RD": true,
+    "RA": true,
+    "AD": false,
+    "CD": false,
+    "Status": 0
+  },
+  "NS example.com": {
+    "Question": [
+      {
+        "name": "example.com.",
+        "type": 2
+      }
+    ],
+    "Answer": [
+      {
+        "name": "example.com.",
+        "data": "hera.ns.cloudflare.com.",
+        "TTL": 86400,
+        "type": 2,
+        "class": 1
+      },
+      {
+        "name": "example.com.",
+        "data": "elliott.ns.cloudflare.com.",
+        "TTL": 86400,
+        "type": 2,
+        "class": 1
+      }
+    ],
+    "Extra": null,
+    "TC": false,
+    "RD": true,
+    "RA": true,
+    "AD": false,
+    "CD": false,
+    "Status": 0
+  },
+  "MX example.com": {
+    "Question": [
+      {
+        "name": "example.com.",
+        "type": 15
+      }
+    ],
+    "Answer": [
+      {
+        "name": "example.com.",
+        "data": "0 .",
+        "TTL": 300,
+        "type": 15,
+        "class": 1
+      }
+    ],
+    "Extra": null,
+    "TC": false,
+    "RD": true,
+    "RA": true,
+    "AD": false,
+    "CD": false,
+    "Status": 0
+  },
+  "TXT example.com": {
+    "Question": [
+      {
+        "name": "example.com.",
+        "type": 16
+      }
+    ],
+    "Answer": [
+      {
+        "name": "example.com.",
+        "data": "\"v=spf1 -all\"",
+        "TTL": 300,
+        "type": 16,
+        "class": 1
+      },
+      {
+        "name": "example.com.",
+        "data": "\"_k2n1y4vw3qtb4skdx9e7dxt97qrmmq9\"",
+        "TTL": 300,
+        "type": 16,
+        "class": 1
+      }
+    ],
+    "Extra": null,
+    "TC": false,
+    "RD": true,
+    "RA": true,
+    "AD": false,
+    "CD": false,
+    "Status": 0
+  },
+  "CNAME www.example.com": {
+    "Question": [
+      {
+        "name": "www.example.com.",
+        "type": 5
+      }
+    ],
+    "Answer": null,
+    "Extra": null,
+    "TC": false,
+    "RD": true,
+    "RA": true,
+    "AD": false,
+    "CD": false,
+    "Status": 0
+  },
+  "PTR 8.8.8.8.in-addr.arpa": {
+    "Question": [
+      {
+        "name": "8.8.8.8.in-addr.arpa.",
+        "type": 12
+      }
+    ],
+    "Answer": [
+      {
+        "name": "8.8.8.8.in-addr.arpa.",
+        "data": "dns.google.",
+        "TTL": 41029,
+        "type": 12,
+        "class": 1
+      }
+    ],
+    "Extra": null,
+    "TC": false,
+    "RD": true,
+    "RA": true,
+    "AD": false,
+    "CD": false,
+    "Status": 0
+  }
+}

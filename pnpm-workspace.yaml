@@ -1,5 +1,7 @@
 allowBuilds:
   '@parcel/watcher': true
+  detox: true
+  dtrace-provider: true
   unrs-resolver: true
 minimumReleaseAgeExclude:
   - expo-clipboard@57.0.2

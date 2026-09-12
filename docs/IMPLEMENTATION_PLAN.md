@@ -1,6 +1,6 @@
 # NetOps Mobile — Implementation Plan
 
-**Status:** M0 complete · M1 complete · M2 complete · M3 complete · M4 next
+**Status:** M0 complete · M1 complete · M2 complete · M3 complete · M4 complete · M5 next
 **Target:** React Native + Expo + TypeScript, Android-first on Fedora Linux, iOS later, optional Linux remote probe later
 **Prime directives:** simplicity, maintainability, independently-addable tool modules, small first milestone
 
@@ -9,7 +9,7 @@
 - **M1 — IPv4 tools:** done. Subnet, CIDR, wildcard and VLSM calculators + ports reference; pure-TS core (`core/ip/cidr`, `core/subnet`, `core/vlsm`, `core/ports`) with golden fixtures, property tests and CI-enforced ≥95% line coverage on the new modules; one-tap copy on every result value.
 - **M2 — Persistence:** done. SQLite with a migration runner (`schema_migrations`, v1 schema + v2 indexes), hosts/networks repositories with tags and full CRUD, ports seeded from the bundled dataset, run history with a settings toggle and retention pruning, JSON/CSV/text exports through the Share sheet, and a Settings screen (theme, history, retention, local-data summary).
 - **M3 — DNS over HTTPS + operations foundation:** done. DoH resolver (Cloudflare/Google/custom, switchable in Settings) covering A/AAAA/CNAME/MX/NS/TXT plus PTR reverse lookups, `useOperation` as the single path for networked tools (loading/error/retry/cancel, offline short-circuit, automatic history persistence), `/run/[id]` drill-in detail view, and capability indirection (`getCapabilities()`).
-- **M4 — Native pivot:** next (TCP connect, TCP ping, port scanner; `react-native-tcp-socket` vs custom Expo module spike).
+- **M4 — Native pivot:** done. First runtime-native dependency (`react-native-tcp-socket@6.4.3`, ADR-006, verified on the bridgeless build through the TurboModule interop layer); TCP connect, TCP ping and a port scanner behind the capability seam (`platform/android/tcp` adapter, imported nowhere else); rate/concurrency caps (20 default, 50 max); typed `TcpConnectReport`/`TcpPingReport`/`PortScanReport` models with service-name join from the ports DB; TCP fixture server + `scripts/e2e-smoke.sh` (documented Detox deviation). Device verification: `docs/M4_VERIFICATION.md`.
 - Decisions taken during implementation are recorded in `docs/adr/`: ADR-001 (CNG + dev-client from day one), ADR-002 (hand-rolled UI primitives instead of react-native-paper), ADR-003 (kv-store instead of MMKV, context instead of zustand, real-SQLite tests via sql.js), ADR-004 (synchronous data layer), ADR-005 (one operations path for networked tools).
 
 ---

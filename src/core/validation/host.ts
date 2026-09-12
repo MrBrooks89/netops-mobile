@@ -58,3 +58,53 @@ export function parseHostInput(input: string): Result<string> {
 export function isValidHostInput(input: string): boolean {
   return parseHostInput(input).ok;
 }
+
+const MAX_PORT = 65_535;
+
+/**
+ * Parse user input into a TCP/UDP port number (1–65535, no leading zeros
+ * beyond one digit). Used by every connectivity tool's port field.
+ */
+export function parsePortInput(input: string): Result<number> {
+  const trimmed = input.trim();
+  if (!/^\d{1,5}$/.test(trimmed) || Number(trimmed) < 1 || Number(trimmed) > MAX_PORT) {
+    return err(
+      toolError('INVALID_INPUT', 'Enter a port between 1 and 65535.', {
+        technical: `parsePortInput("${trimmed}"): out of range`,
+      }),
+    );
+  }
+  return ok(Number(trimmed));
+}
+
+/** Cap a parsed custom list: garbage input beyond this is a typo, not a scan. */
+const MAX_CUSTOM_PORTS = 1024;
+
+/**
+ * Parse a custom port list for the scanner: numbers, ranges (9800-9899),
+ * or both, separated by commas or whitespace ("80 443", "9800-9899,443").
+ *
+ * Returns ascending unique ports, or null when any token is invalid.
+ * Pure: the screen, the smoke harness, and tests all share this grammar.
+ */
+export function parsePortList(input: string): number[] | null {
+  const trimmed = input.trim();
+  if (trimmed === '') return null;
+  const ports: number[] = [];
+  for (const token of trimmed.split(/[,\s]+/)) {
+    const range = /^(\d{1,5})-(\d{1,5})$/.exec(token);
+    if (range) {
+      const from = Number(range[1]);
+      const to = Number(range[2]);
+      if (from < 1 || to > MAX_PORT || from > to) return null;
+      for (let p = from; p <= to; p++) ports.push(p);
+      continue;
+    }
+    const single = parsePortInput(token);
+    if (!single.ok) return null;
+    ports.push(single.value);
+  }
+  const unique = Array.from(new Set(ports)).sort((a, b) => a - b);
+  if (unique.length === 0 || unique.length > MAX_CUSTOM_PORTS) return null;
+  return unique;
+}

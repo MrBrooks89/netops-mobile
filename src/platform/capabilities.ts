@@ -13,6 +13,11 @@
 
 import type { DnsAnswer, DnsRecordType } from '../core/dns/types';
 import type { Result } from '../core/result/result';
+import type {
+  TcpConnectCapability,
+  TcpPingCapability,
+  TcpScanCapability,
+} from './capabilities/tcp';
 
 export interface DnsQueryOptions {
   /** Base endpoint, no query string, e.g. https://cloudflare-dns.com/dns-query */
@@ -36,6 +41,14 @@ export interface DnsCapability {
 export interface CapabilityMap {
   readonly dnsResolve: DnsCapability | null;
   readonly dnsReverse: DnsCapability | null;
+  readonly tcpConnect: TcpConnectCapability | null;
+  readonly tcpScan: TcpScanCapability | null;
+  readonly tcpPing: TcpPingCapability | null;
 }
 
 export const DEFAULT_DNS_TIMEOUT_MS = 10_000;
+export type {
+  TcpConnectCapability,
+  TcpPingCapability,
+  TcpScanCapability,
+} from './capabilities/tcp';

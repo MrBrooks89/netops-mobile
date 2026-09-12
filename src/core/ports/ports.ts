@@ -109,6 +109,29 @@ export function portStats(entries: readonly PortEntry[] = PORTS): {
   return { total: entries.length, tcp, udp };
 }
 
+/** Exact TCP-port lookup, for tools that annotate results with service names. */
+export function lookupTcpService(
+  port: number,
+  entries: readonly PortEntry[] = PORTS,
+): PortEntry | null {
+  const map = tcpPortIndex(entries);
+  return map.get(port) ?? null;
+}
+
+const tcpPortIndexes = new WeakMap<readonly PortEntry[], Map<number, PortEntry>>();
+
+/** Lazily built port→TCP-entry index, cached per dataset instance. */
+function tcpPortIndex(entries: readonly PortEntry[]): Map<number, PortEntry> {
+  const cached = tcpPortIndexes.get(entries);
+  if (cached) return cached;
+  const map = new Map<number, PortEntry>();
+  for (const entry of entries) {
+    if (entry.proto === 'tcp' && !map.has(entry.port)) map.set(entry.port, entry);
+  }
+  tcpPortIndexes.set(entries, map);
+  return map;
+}
+
 /**
  * Content fingerprint of a dataset (FNV-1a, 32-bit, hex).
  *

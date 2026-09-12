@@ -15,6 +15,9 @@ import { CidrCalculatorScreen } from '../../features/cidr-calculator';
 import { WildcardMaskScreen } from '../../features/wildcard-mask-calculator';
 import { VlsmCalculatorScreen } from '../../features/vlsm-calculator';
 import { PortsReferenceScreen } from '../../features/ports-reference';
+import { TcpConnectScreen } from '../../features/tcp-connect';
+import { TcpPingScreen } from '../../features/tcp-ping';
+import { PortScannerScreen } from '../../features/port-scanner';
 
 export const TOOL_REGISTRY: readonly ToolModule[] = [
   {
@@ -88,7 +91,7 @@ export const TOOL_REGISTRY: readonly ToolModule[] = [
     category: 'connectivity',
     icon: 'plug',
     requiredCapabilities: ['tcpConnect'],
-    Component: PlaceholderTool,
+    Component: TcpConnectScreen,
   },
   {
     id: 'tcp-ping',
@@ -97,7 +100,7 @@ export const TOOL_REGISTRY: readonly ToolModule[] = [
     category: 'connectivity',
     icon: 'pulse',
     requiredCapabilities: ['tcpPing'],
-    Component: PlaceholderTool,
+    Component: TcpPingScreen,
   },
   {
     id: 'icmp-ping',
@@ -115,7 +118,7 @@ export const TOOL_REGISTRY: readonly ToolModule[] = [
     category: 'connectivity',
     icon: 'grid',
     requiredCapabilities: ['tcpScan'],
-    Component: PlaceholderTool,
+    Component: PortScannerScreen,
   },
   {
     id: 'http-diagnostics',

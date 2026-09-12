@@ -4,7 +4,7 @@ A cross-platform networking toolkit for beginners, IT support, network
 engineers, and security professionals. Android-first (built and tested on
 Fedora Linux), architected for iOS later without a rewrite.
 
-**Status:** M3 complete (DNS over HTTPS + operations foundation) — next: M4 (native TCP tools). Implementation plan in [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md)
+**Status:** M4 complete (native TCP tools: connect, ping, port scanner) — next: M5 (ping + Wi-Fi info). Implementation plan in [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md)
 
 ## Stack
 

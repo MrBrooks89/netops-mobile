@@ -4,7 +4,7 @@
  */
 
 import React, { useCallback, useState } from 'react';
-import { useFocusEffect } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { Alert, View } from 'react-native';
 import type { RunRecord } from '../../src/core/model/entities';
 import { getTool } from '../../src/core/registry/registry';
@@ -156,7 +156,13 @@ export default function HistoryTab() {
                 {formatWhen(run.startedAt)}
                 {run.errorMessage ? ` — ${run.errorMessage}` : ''}
               </StyledText>
-              <View style={{ marginTop: 10, alignItems: 'flex-start' }}>
+              <View style={{ marginTop: 10, flexDirection: 'row', gap: 8 }}>
+                <Button
+                  title="Details"
+                  variant="secondary"
+                  onPress={() => router.push(`/run/${run.id}`)}
+                  testID={`history-details-${run.id}`}
+                />
                 <Button
                   title="Delete"
                   variant="danger"

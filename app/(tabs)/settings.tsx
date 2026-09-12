@@ -6,6 +6,8 @@ import React, { useCallback, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
 import { Alert, View } from 'react-native';
 import type { ThemePreference } from '../../src/core/model/settings';
+import { DOH_PROVIDERS, type DohProviderId } from '../../src/core/dns/types';
+import { describeProvider, parseCustomDohUrl } from '../../src/core/dns/provider';
 import {
   DEFAULT_HISTORY_RETENTION,
   RETENTION_MAX,
@@ -16,6 +18,7 @@ import {
   Button,
   Card,
   Chip,
+  Field,
   Note,
   ScrollScreen,
   SectionTitle,
@@ -36,6 +39,12 @@ const RETENTION_CHOICES: readonly number[] = [
   DEFAULT_HISTORY_RETENTION,
   1000,
   RETENTION_MAX,
+];
+
+const DOH_CHOICES: readonly { id: DohProviderId; label: string }[] = [
+  { id: 'cloudflare', label: DOH_PROVIDERS.cloudflare.label },
+  { id: 'google', label: DOH_PROVIDERS.google.label },
+  { id: 'custom', label: 'Custom' },
 ];
 
 export default function SettingsTab() {
@@ -108,6 +117,50 @@ export default function SettingsTab() {
         </View>
         <StyledText dim style={{ fontSize: 12 }}>
           System follows your device&apos;s light or dark setting.
+        </StyledText>
+      </Card>
+
+      <Card>
+        <SectionTitle>DNS resolver</SectionTitle>
+        <StyledText dim style={{ fontSize: 13, marginBottom: 8 }}>
+          Lookups use DNS over HTTPS, so they bypass the system resolver on this device. Where your
+          queries go is your choice.
+        </StyledText>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+          {DOH_CHOICES.map((choice) => (
+            <Chip
+              key={choice.id}
+              label={choice.label}
+              selected={settings.dohProvider === choice.id}
+              onPress={() => updateSettings({ dohProvider: choice.id })}
+              testID={`doh-${choice.id}`}
+              radio
+            />
+          ))}
+        </View>
+
+        {settings.dohProvider === 'custom' && (
+          <Field
+            label="Custom endpoint"
+            value={settings.customDohUrl}
+            onChangeText={(customDohUrl) => updateSettings({ customDohUrl })}
+            placeholder="https://dns.example/dns-query"
+            error={
+              settings.customDohUrl.trim() === ''
+                ? null
+                : parseCustomDohUrl(settings.customDohUrl).ok
+                  ? null
+                  : 'Enter an https:// URL that speaks the DoH JSON format.'
+            }
+            hint="Must be https:// and follow the Cloudflare/Google JSON convention."
+            mono
+            testID="doh-custom-url"
+          />
+        )}
+
+        <StyledText dim style={{ fontSize: 12 }}>
+          Currently using {describeProvider(settings.dohProvider, settings.customDohUrl)}. New
+          lookups use this immediately.
         </StyledText>
       </Card>
 

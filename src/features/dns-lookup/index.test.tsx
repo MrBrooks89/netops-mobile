@@ -92,6 +92,30 @@ describe('DnsLookupScreen', () => {
     expect(getByText(/No A records exist for example.com/)).toBeTruthy();
   });
 
+  it('uses the provider chosen in Settings immediately', async () => {
+    const { getByText, getByTestId } = await renderWithApp(<DnsLookupScreen tool={tool} />, {
+      appSettings: { dohProvider: 'google' },
+    });
+    expect(getByText(/Queries go to Google/)).toBeTruthy();
+
+    const { calls } = await withFetchStub(
+      () => dohAnswer(1, '93.184.216.34'),
+      async () => {
+        await fireEvent.press(getByTestId('dns-submit'));
+        await waitFor(() => expect(getByText('93.184.216.34')).toBeTruthy(), { timeout: 3000 });
+      },
+    );
+    expect(calls[0]).toContain('dns.google');
+  });
+
+  it('blocks lookups when a custom endpoint is not configured', async () => {
+    const { getByTestId, getByText } = await renderWithApp(<DnsLookupScreen tool={tool} />, {
+      appSettings: { dohProvider: 'custom', customDohUrl: '' },
+    });
+    expect(getByText(/Enter the custom DNS-over-HTTPS URL/)).toBeTruthy();
+    expect(getByTestId('dns-submit').props.accessibilityState.disabled).toBe(true);
+  });
+
   it('reports NXDOMAIN as a friendly not-found error', async () => {
     const { getByTestId, getByText } = await renderWithApp(<DnsLookupScreen tool={tool} />);
     await withFetchStub(

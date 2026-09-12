@@ -54,6 +54,35 @@ export async function createTestAppData(
   return { db, data, appSettings };
 }
 
+/**
+ * The provider stack a screen or hook needs: app context (repositories +
+ * settings), a timer-free QueryClient, and the theme.
+ */
+function makeWrapper(value: AppContextValue) {
+  // gcTime 0 / retryDelay 0: no lingering cache timers (which stop Jest from
+  // exiting) and no retry backoff to wait through.
+  const client = createQueryClient({ gcTime: 0, retryDelay: 0 });
+  return function Wrapper({ children }: { children: React.ReactNode }) {
+    return (
+      <AppContextProvider value={value}>
+        <QueryClientProvider client={client}>
+          <ThemeProvider preference="dark">{children}</ThemeProvider>
+        </QueryClientProvider>
+      </AppContextProvider>
+    );
+  };
+}
+
+function contextValue(data: AppData, appSettings: AppSettings): AppContextValue {
+  return {
+    settings: data.settings,
+    appSettings,
+    updateSettings: () => {},
+    refreshSettings: () => {},
+    data,
+  };
+}
+
 /** Render a screen inside a working app context backed by in-memory SQLite. */
 export async function renderWithApp(
   ui: React.ReactElement,
@@ -62,19 +91,8 @@ export async function renderWithApp(
   const { db, data, appSettings } = await createTestAppData(options.appSettings, {
     seedPorts: options.seedPorts,
   });
-  const value: AppContextValue = {
-    settings: data.settings,
-    appSettings,
-    updateSettings: () => {},
-    refreshSettings: () => {},
-    data,
-  };
 
-  const result = await render(
-    <AppContextProvider value={value}>
-      <ThemeProvider preference="dark">{ui}</ThemeProvider>
-    </AppContextProvider>,
-  );
+  const result = await render(ui, { wrapper: makeWrapper(contextValue(data, appSettings)) });
 
   return { ...result, data, db, appSettings };
 }
@@ -85,23 +103,9 @@ export async function renderHookWithApp<Result, Props>(
   options: { appSettings?: Partial<AppSettings> } = {},
 ) {
   const { db, data, appSettings } = await createTestAppData(options.appSettings);
-  const value: AppContextValue = {
-    settings: data.settings,
-    appSettings,
-    updateSettings: () => {},
-    refreshSettings: () => {},
-    data,
-  };
 
-  // gcTime 0 / retryDelay 0: no lingering cache timers (Jest would not exit) and
-  // no backoff to wait through.
-  const client = createQueryClient({ gcTime: 0, retryDelay: 0 });
-  const wrapper = ({ children }: { children: React.ReactNode }) => (
-    <AppContextProvider value={value}>
-      <QueryClientProvider client={client}>{children}</QueryClientProvider>
-    </AppContextProvider>
-  );
-
-  const rendered = await renderHook(hook, { wrapper });
+  const rendered = await renderHook(hook, {
+    wrapper: makeWrapper(contextValue(data, appSettings)),
+  });
   return { ...rendered, data, db, appSettings };
 }

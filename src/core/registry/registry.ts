@@ -8,6 +8,8 @@
 
 import type { ToolModule } from './types';
 import { PlaceholderTool } from '../../features/_placeholder/PlaceholderTool';
+import { DnsLookupScreen } from '../../features/dns-lookup';
+import { ReverseDnsScreen } from '../../features/reverse-dns';
 import { SubnetCalculatorScreen } from '../../features/subnet-calculator';
 import { CidrCalculatorScreen } from '../../features/cidr-calculator';
 import { WildcardMaskScreen } from '../../features/wildcard-mask-calculator';
@@ -68,7 +70,7 @@ export const TOOL_REGISTRY: readonly ToolModule[] = [
     category: 'dns',
     icon: 'search',
     requiredCapabilities: ['dnsResolve'],
-    Component: PlaceholderTool,
+    Component: DnsLookupScreen,
   },
   {
     id: 'reverse-dns',
@@ -77,7 +79,7 @@ export const TOOL_REGISTRY: readonly ToolModule[] = [
     category: 'dns',
     icon: 'arrow-undo',
     requiredCapabilities: ['dnsReverse'],
-    Component: PlaceholderTool,
+    Component: ReverseDnsScreen,
   },
   {
     id: 'tcp-connect',

@@ -9,8 +9,11 @@
 module.exports = {
   preset: 'jest-expo',
   testMatch: ['**/*.test.ts', '**/*.test.tsx'],
+  // pnpm puts packages one level deeper, and expo-router pulls in several
+  // ESM-only packages; anything not matching this lookahead is left untransformed
+  // and Jest then fails on its `import` statements.
   transformIgnorePatterns: [
-    'node_modules/(?!(.pnpm|(jest-)?react-native|@react-native(-community)?|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@sentry/react-native|native-base|react-native-svg))',
+    'node_modules/(?!(.pnpm|(jest-)?react-native|@react-native(-community)?|expo(nent)?|expo-.*|@expo(nent)?/.*|@expo-google-fonts/.*|expo-router|standard-navigation|react-navigation|@react-navigation/.*|react-native-screens|react-native-safe-area-context|react-native-is-edge-to-edge|use-latest-callback|nanoid|@sentry/react-native|native-base|react-native-svg))',
   ],
   collectCoverageFrom: [
     'src/core/**/*.ts',

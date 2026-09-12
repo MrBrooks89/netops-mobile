@@ -10,7 +10,10 @@
 import React from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import type { ToolError } from '../core/result/toolError';
-import { Button, Note, StyledText, useTheme } from './components';
+// Direct imports (not the ./components barrel): OperationStatus is re-exported
+// by that barrel, so importing from it creates a require cycle.
+import { Button } from './components/inputs';
+import { Note, StyledText, useTheme } from './components/primitives';
 
 export function OperationStatus({
   isRunning,
@@ -18,12 +21,15 @@ export function OperationStatus({
   error,
   canRetry,
   onRetry,
+  onCancel,
 }: {
   isRunning: boolean;
   runningLabel: string;
   error: ToolError | null;
   canRetry: boolean;
   onRetry?: () => void;
+  /** Abort the in-flight request. Pass the operation's `cancel`. */
+  onCancel?: () => void;
 }) {
   const { theme } = useTheme();
 
@@ -35,11 +41,23 @@ export function OperationStatus({
       >
         <ActivityIndicator color={theme.colors.primary} />
         <StyledText dim>{runningLabel}</StyledText>
+        {onCancel ? (
+          <View style={{ marginLeft: 'auto' }}>
+            <Button
+              title="Cancel"
+              variant="secondary"
+              onPress={onCancel}
+              testID="operation-cancel"
+            />
+          </View>
+        ) : null}
       </View>
     );
   }
 
-  if (!error) return null;
+  // A cancellation is a user action, not a failure — by design the UI stays
+  // silent about it (the abort mapping in platform/http exists for this).
+  if (!error || error.code === 'CANCELLED') return null;
 
   return (
     <View testID="operation-error">

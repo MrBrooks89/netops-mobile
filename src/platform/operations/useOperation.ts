@@ -13,7 +13,7 @@
  * that were then recovered from.
  */
 
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import type { RunStatus } from '../../core/model/entities';
 import type { ToolId } from '../../core/registry/types';
@@ -46,6 +46,12 @@ export interface Operation<TInput, TOutput> {
   reset: () => void;
   readonly isRunning: boolean;
   readonly data: TOutput | null;
+  /**
+   * The input of the run that produced `data` — never live form state. Screens
+   * label their results with this so editing the form afterwards cannot
+   * mislabel (or relabel) the results already on screen.
+   */
+  readonly dataInput: TInput | null;
   readonly error: ToolError | null;
   /** True once a run has finished and can be retried. */
   readonly canRetry: boolean;
@@ -64,6 +70,7 @@ export function useOperation<TInput, TOutput>(
   const controllerRef = useRef<AbortController | null>(null);
   const startedAtRef = useRef<string | null>(null);
   const lastInputRef = useRef<TInput | null>(null);
+  const [dataInput, setDataInput] = useState<TInput | null>(null);
 
   const persist = useCallback(
     (
@@ -104,6 +111,7 @@ export function useOperation<TInput, TOutput>(
     },
 
     onSuccess: (output, input) => {
+      setDataInput(input);
       persist(
         input,
         'success',
@@ -172,9 +180,13 @@ export function useOperation<TInput, TOutput>(
     runAsync,
     retry,
     cancel,
-    reset: mutation.reset,
+    reset: () => {
+      mutation.reset();
+      setDataInput(null);
+    },
     isRunning: mutation.isPending,
     data: mutation.data ?? null,
+    dataInput,
     error,
     canRetry: error !== null && error.code !== 'CANCELLED' && error.code !== 'INVALID_INPUT',
   };

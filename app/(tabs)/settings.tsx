@@ -164,7 +164,7 @@ export default function SettingsTab() {
       <Card>
         <SectionTitle>History</SectionTitle>
         <StyledText dim style={{ fontSize: 13, marginBottom: 8 }}>
-          Calculator runs are recorded locally when the input is valid. Nothing leaves the device.
+          Tool runs are recorded locally on this device. Nothing leaves the device.
         </StyledText>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
           <Chip

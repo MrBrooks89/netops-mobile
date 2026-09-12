@@ -133,16 +133,17 @@ export function ReverseDnsScreen({ tool }: ToolScreenProps) {
         error={operation.error}
         canRetry={operation.canRetry}
         onRetry={operation.retry}
+        onCancel={operation.cancel}
       />
 
-      {operation.data !== null && (
+      {operation.data !== null && operation.dataInput !== null && (
         <Card>
           <SectionTitle>
             {operation.data.length} PTR record{operation.data.length === 1 ? '' : 's'}
           </SectionTitle>
           {operation.data.length === 0 ? (
             <StyledText dim testID="reverse-no-records">
-              No PTR record is published for {ip.trim()}.
+              No PTR record is published for {operation.dataInput.ip}.
             </StyledText>
           ) : (
             operation.data.map((answer, index) => (

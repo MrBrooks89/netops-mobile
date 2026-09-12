@@ -120,10 +120,7 @@ export default function HistoryTab() {
 
   return (
     <ScrollScreen testID="history-screen">
-      <ToolHeader
-        title="History"
-        description={`Calculator runs recorded on this device (${total})`}
-      />
+      <ToolHeader title="History" description={`Tool runs recorded on this device (${total})`} />
 
       {!settings.historyEnabled && (
         <Note tone="warn" testID="history-disabled">
@@ -162,7 +159,7 @@ export default function HistoryTab() {
         <Card>
           <StyledText dim testID="history-empty">
             {toolFilter === 'all'
-              ? 'No runs yet. Calculator results and lookups are recorded here.'
+              ? 'No runs yet. Tool results and lookups are recorded here.'
               : `No runs recorded for ${toolTitle(toolFilter)} yet.`}
           </StyledText>
         </Card>

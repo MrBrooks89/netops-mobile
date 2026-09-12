@@ -100,6 +100,18 @@ export async function fetchJson(
         }),
       );
     }
+    // A user cancellation. Decided by the caller's abort signal — not the
+    // error shape, which varies by transport: on Android, Expo's native fetch
+    // rejects cancellation with a plain `Error("fetch failed: Fetch request
+    // has been canceled")` that carries no `AbortError` name to match.
+    if (options.signal?.aborted) {
+      return err(
+        toolError('CANCELLED', 'The request was cancelled.', {
+          technical: 'fetchJson: caller signal aborted',
+          cause,
+        }),
+      );
+    }
     return err(mapFetchFailure(cause));
   } finally {
     clearTimeout(timer);

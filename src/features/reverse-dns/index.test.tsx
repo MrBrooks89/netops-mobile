@@ -94,4 +94,25 @@ describe('ReverseDnsScreen', () => {
     );
     expect(getByText(/No PTR record is published/)).toBeTruthy();
   });
+
+  it('keeps the empty-state labelled with the address that was looked up', async () => {
+    // Regression: the empty state read live form state, so editing the address
+    // after a lookup rewrote history of what had been queried.
+    const { getByTestId, getByText, queryByText } = await renderWithApp(
+      <ReverseDnsScreen tool={tool} />,
+    );
+    await withFetchStub(
+      () => ({ Status: 0, Answer: [] }),
+      async () => {
+        await fireEvent.press(getByTestId('reverse-submit'));
+        await waitFor(() => expect(getByTestId('reverse-no-records')).toBeTruthy(), {
+          timeout: 3000,
+        });
+      },
+    );
+
+    await fireEvent.changeText(getByTestId('reverse-ip'), '1.1.1.1');
+    expect(getByText(/No PTR record is published for 8\.8\.8\.8/)).toBeTruthy();
+    expect(queryByText(/No PTR record is published for 1\.1\.1\.1/)).toBeNull();
+  });
 });

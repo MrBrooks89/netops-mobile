@@ -116,6 +116,61 @@ describe('DnsLookupScreen', () => {
     expect(getByTestId('dns-submit').props.accessibilityState.disabled).toBe(true);
   });
 
+  it('keeps the results labelled with the type that produced them', async () => {
+    // Regression: the header read live form state, so switching the record
+    // type without re-running mislabelled the results still on screen.
+    const { getByTestId, getByText, queryByText } = await renderWithApp(
+      <DnsLookupScreen tool={tool} />,
+    );
+    await withFetchStub(
+      () => dohAnswer(1, '93.184.216.34'),
+      async () => {
+        await fireEvent.press(getByTestId('dns-submit'));
+        await waitFor(() => expect(getByText('93.184.216.34')).toBeTruthy(), { timeout: 3000 });
+      },
+    );
+
+    await fireEvent.press(getByTestId('dns-type-MX'));
+    expect(getByText('1 A record')).toBeTruthy();
+    expect(queryByText(/No MX records exist/)).toBeNull();
+  });
+
+  it('cancels a hanging lookup without recording it in history', async () => {
+    const { getByTestId, queryByTestId, data } = await renderWithApp(
+      <DnsLookupScreen tool={tool} />,
+    );
+
+    const original = globalThis.fetch;
+    // A faithful fetch double: rejects with AbortError when the caller's
+    // signal aborts, exactly like the real transport.
+    globalThis.fetch = ((_url: string, init?: { signal?: AbortSignal }) =>
+      new Promise((_resolve, reject) => {
+        init?.signal?.addEventListener('abort', () => {
+          const error = new Error('The operation was aborted.');
+          error.name = 'AbortError';
+          reject(error);
+        });
+      })) as unknown as typeof fetch;
+
+    try {
+      await fireEvent.press(getByTestId('dns-submit'));
+      await waitFor(() => expect(getByTestId('operation-running')).toBeTruthy());
+      await fireEvent.press(getByTestId('operation-cancel'));
+      // The run settles as cancelled: no running indicator, no error card.
+      await waitFor(() => expect(queryByTestId('operation-running')).toBeNull());
+      expect(queryByTestId('operation-error')).toBeNull();
+    } finally {
+      globalThis.fetch = original;
+    }
+
+    const runs = data.runs.list();
+    expect(runs.ok).toBe(true);
+    if (runs.ok) {
+      const cancelled = runs.value.filter((r) => r.status === 'cancelled');
+      expect(cancelled).toHaveLength(0);
+    }
+  });
+
   it('reports NXDOMAIN as a friendly not-found error', async () => {
     const { getByTestId, getByText } = await renderWithApp(<DnsLookupScreen tool={tool} />);
     await withFetchStub(

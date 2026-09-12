@@ -164,16 +164,18 @@ export function DnsLookupScreen({ tool }: ToolScreenProps) {
         error={operation.error}
         canRetry={operation.canRetry}
         onRetry={operation.retry}
+        onCancel={operation.cancel}
       />
 
-      {operation.data !== null && (
+      {operation.data !== null && operation.dataInput !== null && (
         <Card>
           <SectionTitle>
-            {operation.data.length} {type} record{operation.data.length === 1 ? '' : 's'}
+            {operation.data.length} {operation.dataInput.type} record
+            {operation.data.length === 1 ? '' : 's'}
           </SectionTitle>
           {operation.data.length === 0 ? (
             <StyledText dim testID="dns-no-records">
-              No {type} records exist for {parsed.ok ? parsed.value : name}.
+              No {operation.dataInput.type} records exist for {operation.dataInput.name}.
             </StyledText>
           ) : (
             operation.data.map((answer, index) => (

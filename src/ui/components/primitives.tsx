@@ -131,10 +131,18 @@ export function ToolHeader({ title, description }: { title: string; description:
 }
 
 /** Monospace value row without a copy affordance (info only). */
-export function ValueRow({ label, value }: { label: string; value: string }) {
+export function ValueRow({
+  label,
+  value,
+  testID,
+}: {
+  label: string;
+  value: string;
+  testID?: string;
+}) {
   const { theme } = useTheme();
   return (
-    <View style={[styles.valueRow, { borderBottomColor: theme.colors.border }]}>
+    <View testID={testID} style={[styles.valueRow, { borderBottomColor: theme.colors.border }]}>
       <StyledText dim style={styles.valueLabel}>
         {label}
       </StyledText>

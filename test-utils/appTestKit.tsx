@@ -7,7 +7,7 @@
  * screens silently no-op when no provider is present.
  */
 
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { render, renderHook } from '@testing-library/react-native';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { AppContextProvider, type AppContextValue } from '../src/providers/AppProviders';
@@ -18,7 +18,7 @@ import { createNetworkRepository } from '../src/data/repositories/networks';
 import { createPortRepository } from '../src/data/repositories/ports';
 import { createRunRepository } from '../src/data/repositories/runs';
 import type { AppData } from '../src/data/bootstrap';
-import { DEFAULT_SETTINGS } from '../src/data/settings/appSettings';
+import { readSettings, writeSettings } from '../src/data/settings/appSettings';
 import { createQueryClient } from '../src/providers/QueryProvider';
 import { ThemeProvider } from '../src/ui/components';
 import { createMemorySettingsStore } from './memorySettingsStore';
@@ -37,12 +37,15 @@ export async function createTestAppData(
   if (!migrated.ok) throw new Error('migration failed in test setup');
 
   const settings = createMemorySettingsStore();
+  // Overrides go through writeSettings so the store is the source of truth:
+  // readSettings(data.settings) sees the same settings the context exposes,
+  // exactly like the production provider.
+  const appSettings = writeSettings(settings, overrides);
   const ports = createPortRepository(db, settings);
   // Seeding the full dataset is only needed by tests that read it; leaving it
   // out keeps the calculator screen tests fast.
   if (options.seedPorts) await ports.ensureSeeded();
 
-  const appSettings: AppSettings = { ...DEFAULT_SETTINGS, ...overrides };
   const data: AppData = {
     db,
     hosts: createHostRepository(db),
@@ -56,13 +59,29 @@ export async function createTestAppData(
 
 /**
  * The provider stack a screen or hook needs: app context (repositories +
- * settings), a timer-free QueryClient, and the theme.
+ * settings), a timer-free QueryClient, and the theme. Settings are live:
+ * updateSettings/refreshSettings behave like the production provider, so
+ * settings-driven screens can be driven through their real controls.
  */
-function makeWrapper(value: AppContextValue) {
+function makeWrapper(data: AppData) {
   // gcTime 0 / retryDelay 0: no lingering cache timers (which stop Jest from
   // exiting) and no retry backoff to wait through.
   const client = createQueryClient({ gcTime: 0, retryDelay: 0 });
   return function Wrapper({ children }: { children: React.ReactNode }) {
+    const [appSettings, setAppSettings] = useState<AppSettings>(() =>
+      readSettings(data.settings),
+    );
+    const value = useMemo<AppContextValue>(
+      () => ({
+        settings: data.settings,
+        appSettings,
+        updateSettings: (patch: Partial<AppSettings>) =>
+          setAppSettings(writeSettings(data.settings, patch)),
+        refreshSettings: () => setAppSettings(readSettings(data.settings)),
+        data,
+      }),
+      [appSettings],
+    );
     return (
       <AppContextProvider value={value}>
         <QueryClientProvider client={client}>
@@ -70,16 +89,6 @@ function makeWrapper(value: AppContextValue) {
         </QueryClientProvider>
       </AppContextProvider>
     );
-  };
-}
-
-function contextValue(data: AppData, appSettings: AppSettings): AppContextValue {
-  return {
-    settings: data.settings,
-    appSettings,
-    updateSettings: () => {},
-    refreshSettings: () => {},
-    data,
   };
 }
 
@@ -92,7 +101,7 @@ export async function renderWithApp(
     seedPorts: options.seedPorts,
   });
 
-  const result = await render(ui, { wrapper: makeWrapper(contextValue(data, appSettings)) });
+  const result = await render(ui, { wrapper: makeWrapper(data) });
 
   return { ...result, data, db, appSettings };
 }
@@ -104,8 +113,6 @@ export async function renderHookWithApp<Result, Props>(
 ) {
   const { db, data, appSettings } = await createTestAppData(options.appSettings);
 
-  const rendered = await renderHook(hook, {
-    wrapper: makeWrapper(contextValue(data, appSettings)),
-  });
+  const rendered = await renderHook(hook, { wrapper: makeWrapper(data) });
   return { ...rendered, data, db, appSettings };
 }

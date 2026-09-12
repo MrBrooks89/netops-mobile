@@ -33,12 +33,8 @@ export default function SavedTab() {
     else setNetworks(networkResult.value);
   }, [data]);
 
-  // Load-on-mount effect. React Query (M3, plan 12) replaces this pattern for
-  // networked operations; until then a screen-scoped load is the simplest
-  // correct option, and the state updates happen after `await`.
-  // Reload whenever the tab regains focus: history is written by the
-  // calculator screens and saved items can change from elsewhere, so a
-  // mount-only load would show stale data. React Query replaces this in M3.
+  // Reload whenever the tab regains focus: saved items can be created or
+  // changed on other screens, so a mount-only load would show stale data.
   useFocusEffect(
     useCallback(() => {
       void reload();

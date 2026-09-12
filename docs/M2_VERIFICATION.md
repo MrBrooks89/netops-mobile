@@ -46,11 +46,18 @@ recording hook reads the live settings from `useAppSettings()`.
 
 ## Known follow-ups (not blockers)
 
-- The Settings screen loads its "stored on this device" counts on mount, so they
-  can be stale if runs are recorded while it is open. Refreshing on focus would
-  fix it.
-- Single-choice chips (`System`/`Light`/`Dark`, retention) do not report
-  `selected=true` through the Android accessibility tree after a fresh render,
-  even though the selection is correct and persists. Using
-  `accessibilityRole="radio"` with `checked` would report it properly and make it
-  assertable from tests.
+Both items below were open at first verification and have since been fixed and
+covered by regression tests in `src/features/settings/index.test.tsx`:
+
+- ~~The Settings screen loads its "stored on this device" counts on mount, so
+  they can be stale if runs are recorded while it is open.~~ Fixed: the screen
+  reloads via `useFocusEffect`, so counts refresh every time the tab regains
+  focus. The regression test seeds a run while the screen is "unfocused" and
+  asserts the count only updates after refocus.
+- ~~Single-choice chips (`System`/`Light`/`Dark`, retention) do not report
+  `selected=true` through the Android accessibility tree after a fresh
+  render.~~ Fixed: single-choice chips render as `accessibilityRole="radio"`
+  with `accessibilityState.checked`, so the active option is announced and
+  assertable on first render — including stored non-default preferences (dark
+  theme, retention 250) — via `getByRole('radio', { checked: true })` and
+  `accessibilityState.checked` assertions.

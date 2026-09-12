@@ -68,12 +68,9 @@ export default function SettingsTab() {
     });
   }, [data]);
 
-  // Load-on-mount effect. React Query (M3, plan 12) replaces this pattern for
-  // networked operations; until then a screen-scoped load is the simplest
-  // correct option, and the state updates happen after `await`.
   // Reload whenever the tab regains focus: history is written by the
   // calculator screens and saved items can change from elsewhere, so a
-  // mount-only load would show stale data. React Query replaces this in M3.
+  // mount-only load would show stale data.
   useFocusEffect(
     useCallback(() => {
       void reload();
@@ -216,10 +213,22 @@ export default function SettingsTab() {
 
       <Card>
         <SectionTitle>Stored on this device</SectionTitle>
-        <ValueRow label="Saved hosts" value={String(counts.hosts)} />
-        <ValueRow label="Saved networks" value={String(counts.networks)} />
-        <ValueRow label="History entries" value={String(counts.runs)} />
-        <ValueRow label="Ports reference" value={String(counts.ports)} />
+        <ValueRow label="Saved hosts" value={String(counts.hosts)} testID="settings-count-hosts" />
+        <ValueRow
+          label="Saved networks"
+          value={String(counts.networks)}
+          testID="settings-count-networks"
+        />
+        <ValueRow
+          label="History entries"
+          value={String(counts.runs)}
+          testID="settings-count-runs"
+        />
+        <ValueRow
+          label="Ports reference"
+          value={String(counts.ports)}
+          testID="settings-count-ports"
+        />
       </Card>
 
       <Card>

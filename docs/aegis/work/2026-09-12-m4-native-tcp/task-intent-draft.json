@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "aegis.schema.v0",
+  "requestedOutcome": "Spike ADR recorded, TCP tools live on device with typed reports, fixture-verified",
+  "goal": "Spike ADR recorded, TCP tools live on device with typed reports, fixture-verified",
+  "successEvidence": [],
+  "stopCondition": "Stop when success evidence is satisfied or a blocker/risk requires pause.",
+  "nonGoals": [],
+  "scope": "plan M4 #29-#34",
+  "changeKinds": [
+    "feature"
+  ],
+  "riskHints": []
+}

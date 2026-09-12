@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "aegis.schema.v0",
+  "taskId": "2026-09-12-m4-native-tcp",
+  "requiredBaselineRefs": [],
+  "deliveredContextRefs": [],
+  "acknowledgedBeforePlanRefs": [],
+  "citedInPlanRefs": [],
+  "missingRefs": [],
+  "decision": "continue"
+}

@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "aegis.schema.v0",
+  "baselineRefs": [],
+  "impactStatement": "docs/aegis/work/2026-09-12-m4-native-tcp/impact-statement-draft.json",
+  "compatPlan": "Compatibility boundary not yet refined.",
+  "retirementPlan": "not-yet-verified",
+  "evidenceBundle": []
+}

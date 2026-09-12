@@ -8,7 +8,8 @@
  */
 
 import React from 'react';
-import { render } from '@testing-library/react-native';
+import { render, renderHook } from '@testing-library/react-native';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { AppContextProvider, type AppContextValue } from '../src/providers/AppProviders';
 import type { AppSettings } from '../src/core/model/settings';
 import { migrate } from '../src/data/db/migrate';
@@ -18,6 +19,7 @@ import { createPortRepository } from '../src/data/repositories/ports';
 import { createRunRepository } from '../src/data/repositories/runs';
 import type { AppData } from '../src/data/bootstrap';
 import { DEFAULT_SETTINGS } from '../src/data/settings/appSettings';
+import { createQueryClient } from '../src/providers/QueryProvider';
 import { ThemeProvider } from '../src/ui/components';
 import { createMemorySettingsStore } from './memorySettingsStore';
 import { createTestDatabase, type TestDatabase } from './sqljsDriver';
@@ -75,4 +77,31 @@ export async function renderWithApp(
   );
 
   return { ...result, data, db, appSettings };
+}
+
+/** Render a hook inside the app context plus React Query. */
+export async function renderHookWithApp<Result, Props>(
+  hook: (props: Props) => Result,
+  options: { appSettings?: Partial<AppSettings> } = {},
+) {
+  const { db, data, appSettings } = await createTestAppData(options.appSettings);
+  const value: AppContextValue = {
+    settings: data.settings,
+    appSettings,
+    updateSettings: () => {},
+    refreshSettings: () => {},
+    data,
+  };
+
+  // gcTime 0 / retryDelay 0: no lingering cache timers (Jest would not exit) and
+  // no backoff to wait through.
+  const client = createQueryClient({ gcTime: 0, retryDelay: 0 });
+  const wrapper = ({ children }: { children: React.ReactNode }) => (
+    <AppContextProvider value={value}>
+      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+    </AppContextProvider>
+  );
+
+  const rendered = await renderHook(hook, { wrapper });
+  return { ...rendered, data, db, appSettings };
 }

@@ -55,9 +55,7 @@ function toAnswer(raw: RawAnswer): DnsAnswer | null {
 
   if (type === 'MX') {
     const { priority, value } = parseMx(raw.data);
-    return priority === null
-      ? { name, type, value, ttl }
-      : { name, type, value, ttl, priority };
+    return priority === null ? { name, type, value, ttl } : { name, type, value, ttl, priority };
   }
   if (type === 'TXT') return { name, type, value: unquoteTxt(raw.data), ttl };
   // A/AAAA/CNAME/NS/PTR are already canonical text; strip the presentation dot.

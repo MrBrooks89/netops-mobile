@@ -19,6 +19,7 @@ import type { ToolError } from '../core/result/toolError';
 import { openAppData, type AppData } from '../data/bootstrap';
 import { createKvSettingsStore } from '../data/settings/kvStore';
 import { readSettings, writeSettings } from '../data/settings/appSettings';
+import { QueryProvider } from './QueryProvider';
 import type { SettingsStore } from '../data/settings/store';
 import { Card, Screen, StyledText, ThemeProvider } from '../ui/components';
 
@@ -90,7 +91,9 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider preference={appSettings.theme}>
       {value ? (
-        <AppContext.Provider value={value}>{children}</AppContext.Provider>
+        <AppContext.Provider value={value}>
+          <QueryProvider>{children}</QueryProvider>
+        </AppContext.Provider>
       ) : (
         <BootErrorView error={boot.ok ? null : boot.error} />
       )}

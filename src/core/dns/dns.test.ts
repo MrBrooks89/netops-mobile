@@ -88,7 +88,12 @@ describe('parseDohResponse', () => {
     const result = parseDohResponse({
       Status: 0,
       Answer: [
-        { name: 'example.com.', type: 6, TTL: 300, data: 'ns.icann.org. noc.dns.icann.org. 1 2 3 4 5' },
+        {
+          name: 'example.com.',
+          type: 6,
+          TTL: 300,
+          data: 'ns.icann.org. noc.dns.icann.org. 1 2 3 4 5',
+        },
         { name: 'example.com.', type: 257, TTL: 300, data: '0 issue "ca.example.net"' },
         { name: 'example.com.', type: 1, TTL: 300, data: '93.184.216.34' },
       ],
@@ -114,7 +119,12 @@ describe('summarizeAnswers', () => {
     expect(summarizeAnswers([answer('1.1.1.1')])).toBe('1.1.1.1');
     expect(summarizeAnswers([answer('1.1.1.1'), answer('2.2.2.2')])).toBe('1.1.1.1, 2.2.2.2');
     expect(
-      summarizeAnswers([answer('1.1.1.1'), answer('2.2.2.2'), answer('3.3.3.3'), answer('4.4.4.4')]),
+      summarizeAnswers([
+        answer('1.1.1.1'),
+        answer('2.2.2.2'),
+        answer('3.3.3.3'),
+        answer('4.4.4.4'),
+      ]),
     ).toBe('1.1.1.1, 2.2.2.2 +2 more');
   });
 });

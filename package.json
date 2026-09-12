@@ -4,6 +4,8 @@
   "main": "expo-router/entry",
   "dependencies": {
     "@expo/vector-icons": "^15.1.1",
+    "@react-native-community/netinfo": "12.0.1",
+    "@tanstack/react-query": "^5.102.8",
     "expo": "~57.0.21",
     "expo-clipboard": "~57.0.2",
     "expo-constants": "^57.0.17",

@@ -28,9 +28,7 @@ export function reverseNameFor(input: string): Result<string> {
   if (!parsed.ok) return invalid(input.trim(), 'IP parse failed');
 
   if (parsed.value.family === 4) {
-    const octets = [24n, 16n, 8n, 0n].map((shift) =>
-      Number((parsed.value.int >> shift) & 0xffn),
-    );
+    const octets = [24n, 16n, 8n, 0n].map((shift) => Number((parsed.value.int >> shift) & 0xffn));
     return ok(`${octets.reverse().join('.')}.in-addr.arpa`);
   }
 

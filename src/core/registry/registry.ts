@@ -16,8 +16,9 @@ import { WildcardMaskScreen } from '../../features/wildcard-mask-calculator';
 import { VlsmCalculatorScreen } from '../../features/vlsm-calculator';
 import { PortsReferenceScreen } from '../../features/ports-reference';
 import { TcpConnectScreen } from '../../features/tcp-connect';
-import { TcpPingScreen } from '../../features/tcp-ping';
+import { PingScreen } from '../../features/tcp-ping';
 import { PortScannerScreen } from '../../features/port-scanner';
+import { WifiInfoScreen } from '../../features/wifi-info';
 
 export const TOOL_REGISTRY: readonly ToolModule[] = [
   {
@@ -95,21 +96,12 @@ export const TOOL_REGISTRY: readonly ToolModule[] = [
   },
   {
     id: 'tcp-ping',
-    title: 'TCP Ping',
-    description: 'Reachability stats via repeated TCP connections',
+    title: 'Ping',
+    description: 'Reachability stats: TCP (default) or best-effort ICMP',
     category: 'connectivity',
     icon: 'pulse',
     requiredCapabilities: ['tcpPing'],
-    Component: TcpPingScreen,
-  },
-  {
-    id: 'icmp-ping',
-    title: 'Ping (ICMP)',
-    description: 'ICMP echo — best effort on mobile platforms',
-    category: 'connectivity',
-    icon: 'pulse',
-    requiredCapabilities: ['icmpPing'],
-    Component: PlaceholderTool,
+    Component: PingScreen,
   },
   {
     id: 'port-scanner',
@@ -154,7 +146,7 @@ export const TOOL_REGISTRY: readonly ToolModule[] = [
     category: 'discovery',
     icon: 'wifi',
     requiredCapabilities: ['wifiInfo'],
-    Component: PlaceholderTool,
+    Component: WifiInfoScreen,
   },
 ];
 

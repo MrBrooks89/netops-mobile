@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "aegis.schema.v0",
+  "requestedOutcome": "netops Expo module ships ICMP best-effort ping, Wi-Fi info with permission flow, and the unified Ping + Wi-Fi screens, device-verified",
+  "goal": "netops Expo module ships ICMP best-effort ping, Wi-Fi info with permission flow, and the unified Ping + Wi-Fi screens, device-verified",
+  "successEvidence": [],
+  "stopCondition": "Stop when success evidence is satisfied or a blocker/risk requires pause.",
+  "nonGoals": [],
+  "scope": "plan M5 #35-#40",
+  "changeKinds": [
+    "feature"
+  ],
+  "riskHints": []
+}

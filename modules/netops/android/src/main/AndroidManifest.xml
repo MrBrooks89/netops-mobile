@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <!-- Wi-Fi SSID/BSSID + channel info (plan §16 table): Android 8.1+ requires
+       fine location for connection info; Android 9+ also requires Location
+       Services enabled. The permission *request* is a runtime flow (the UI
+       explains "why location?"); the manifest only declares the capability. -->
+  <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+  <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+  <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+</manifest>

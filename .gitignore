@@ -43,6 +43,11 @@ yarn-error.*
 /ios
 /android
 
+# gradle output inside local Expo modules (source only)
+modules/*/android/build/
+modules/*/android/.gradle/
+modules/*/ios/Pods/
+
 # local dev toolchain (JDK, Android SDK, AVDs, caches) — reproducible via scripts/setup-env.sh
 .tools/
 .toolcache/

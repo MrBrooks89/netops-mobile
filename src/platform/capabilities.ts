@@ -18,6 +18,9 @@ import type {
   TcpPingCapability,
   TcpScanCapability,
 } from './capabilities/tcp';
+import type { IcmpPingCapability } from './capabilities/icmp';
+import type { WifiInfoCapability } from './capabilities/wifi';
+import type { PermissionsCapability } from './permissions';
 
 export interface DnsQueryOptions {
   /** Base endpoint, no query string, e.g. https://cloudflare-dns.com/dns-query */
@@ -44,6 +47,12 @@ export interface CapabilityMap {
   readonly tcpConnect: TcpConnectCapability | null;
   readonly tcpScan: TcpScanCapability | null;
   readonly tcpPing: TcpPingCapability | null;
+  /** Best-effort ICMP reachability (D4); null when the platform has none. */
+  readonly icmpPing: IcmpPingCapability | null;
+  /** Current Wi-Fi/network snapshot; null when unavailable. */
+  readonly wifiInfo: WifiInfoCapability | null;
+  /** Typed permission flows (plan §6.3.4); null without the native module. */
+  readonly permissions: PermissionsCapability | null;
 }
 
 export const DEFAULT_DNS_TIMEOUT_MS = 10_000;
@@ -52,3 +61,6 @@ export type {
   TcpPingCapability,
   TcpScanCapability,
 } from './capabilities/tcp';
+export type { IcmpPingCapability, IcmpPingOptions } from './capabilities/icmp';
+export type { WifiInfoCapability } from './capabilities/wifi';
+export type { PermissionScope, PermissionState, PermissionsCapability } from './permissions';

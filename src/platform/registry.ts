@@ -36,15 +36,46 @@ function androidTcp(): Pick<CapabilityMap, 'tcpConnect' | 'tcpPing' | 'tcpScan'>
   };
 }
 
+/**
+ * Android netops-module adapters (M5: ICMP best-effort, Wi-Fi info,
+ * permission flows). Lazy for the same reason as androidTcp: the module
+ * file calls requireNativeModule at module scope, which throws when the
+ * native module is absent.
+ */
+function androidNetops(): Pick<CapabilityMap, 'icmpPing' | 'wifiInfo' | 'permissions'> {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const netops = require('./android/netops') as {
+    makeIcmpPingCapability: (
+      module: import('./capabilities/icmp').IcmpPingCapability extends never ? never : never,
+    ) => never;
+  } & typeof import('./android/netops');
+  // netopsModule() loads the native handle lazily (first call requires the
+  // module package). Calling it here — passing the factory itself would hand
+  // the adapters a function whose methods are all undefined.
+  const module = netops.netopsModule();
+  return {
+    icmpPing: netops.makeIcmpPingCapability(module),
+    wifiInfo: netops.makeWifiInfoCapability(module),
+    permissions: netops.makePermissionsCapability(module),
+  };
+}
+
 export function getCapabilities(): CapabilityMap {
   const tcp =
     Platform.OS === 'android' ? androidTcp() : { tcpConnect: null, tcpPing: null, tcpScan: null };
+  const netops =
+    Platform.OS === 'android'
+      ? androidNetops()
+      : { icmpPing: null, wifiInfo: null, permissions: null };
   return {
     dnsResolve: dohCapability,
     dnsReverse: dohCapability,
     tcpConnect: tcp.tcpConnect,
     tcpPing: tcp.tcpPing,
     tcpScan: tcp.tcpScan,
+    icmpPing: netops.icmpPing,
+    wifiInfo: netops.wifiInfo,
+    permissions: netops.permissions,
   };
 }
 

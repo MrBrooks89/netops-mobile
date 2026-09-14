@@ -17,3 +17,14 @@ Entries are workspace records, not authoritative runtime decisions.
 | 2026-09-12 | artifact | docs/aegis/work/2026-09-12-m4-native-tcp/drift-check-draft.json | M4 native pivot: TCP connect/ping + port scanner drift check draft |
 | 2026-09-12 | artifact | docs/aegis/work/2026-09-12-m4-native-tcp/gate-input-pack.json | 2026-09-12-m4-native-tcp gate input pack |
 | 2026-09-12 | work | docs/aegis/work/2026-09-12-m4-native-tcp/proof-bundle.md | 2026-09-12-m4-native-tcp proof bundle |
+| 2026-09-14 | work | docs/aegis/work/2026-09-13-m5-ping-wifi/10-intent.md | M5 ping + Wi-Fi info: netops module intent |
+| 2026-09-14 | work | docs/aegis/work/2026-09-13-m5-ping-wifi/20-checkpoint.md | M5 ping + Wi-Fi info: netops module checkpoint |
+| 2026-09-14 | work | docs/aegis/work/2026-09-13-m5-ping-wifi/90-evidence.md | M5 ping + Wi-Fi info: netops module evidence |
+| 2026-09-14 | work | docs/aegis/work/2026-09-13-m5-ping-wifi/99-reflection.md | M5 ping + Wi-Fi info: netops module reflection |
+| 2026-09-14 | artifact | docs/aegis/work/2026-09-13-m5-ping-wifi/task-intent-draft.json | 2026-09-13-m5-ping-wifi task intent draft |
+| 2026-09-14 | artifact | docs/aegis/work/2026-09-13-m5-ping-wifi/baseline-read-set-hint.json | 2026-09-13-m5-ping-wifi baseline read-set hint |
+| 2026-09-14 | artifact | docs/aegis/work/2026-09-13-m5-ping-wifi/baseline-usage-draft.json | 2026-09-13-m5-ping-wifi baseline usage draft |
+| 2026-09-14 | artifact | docs/aegis/work/2026-09-13-m5-ping-wifi/impact-statement-draft.json | 2026-09-13-m5-ping-wifi impact statement draft |
+| 2026-09-14 | artifact | docs/aegis/work/2026-09-13-m5-ping-wifi/drift-check-draft.json | 2026-09-13-m5-ping-wifi drift check draft |
+| 2026-09-14 | artifact | docs/aegis/work/2026-09-13-m5-ping-wifi/gate-input-pack.json | 2026-09-13-m5-ping-wifi gate input pack |
+| 2026-09-14 | work | docs/aegis/work/2026-09-13-m5-ping-wifi/proof-bundle.md | 2026-09-13-m5-ping-wifi proof bundle |

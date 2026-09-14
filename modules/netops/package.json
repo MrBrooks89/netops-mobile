@@ -1,0 +1,9 @@
+{
+  "name": "@netops/netops",
+  "version": "0.1.0",
+  "description": "NetOps native module: ICMP best-effort reachability, Wi-Fi info, typed permission flows.",
+  "main": "index.ts",
+  "types": "src/NetopsModule.ts",
+  "license": "UNLICENSED",
+  "private": true
+}

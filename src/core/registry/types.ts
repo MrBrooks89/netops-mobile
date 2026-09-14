@@ -47,7 +47,6 @@ export type ToolId =
   | 'reverse-dns'
   | 'tcp-connect'
   | 'tcp-ping'
-  | 'icmp-ping'
   | 'port-scanner'
   | 'http-diagnostics'
   | 'tls-inspector'

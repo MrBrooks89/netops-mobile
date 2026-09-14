@@ -14,7 +14,7 @@ import type { ToolModule, ToolId } from '../../core/registry/types';
 import { ok } from '../../core/result/result';
 import type { TcpConnectReport, TcpPingReport } from '../../core/model/tcp';
 import { TcpConnectScreen } from '../tcp-connect';
-import { TcpPingScreen } from '../tcp-ping';
+import { PingScreen } from '../tcp-ping';
 import { PortScannerScreen } from '../port-scanner';
 import { getCapabilities } from '../../platform/registry';
 
@@ -50,6 +50,7 @@ const connectReport: TcpConnectReport = {
 };
 
 const pingReport: TcpPingReport = {
+  method: 'tcp',
   host: 'example.com',
   port: 443,
   probes: [
@@ -97,6 +98,9 @@ function mockConnect() {
           },
         ),
     },
+    icmpPing: null,
+    wifiInfo: null,
+    permissions: null,
   });
 }
 
@@ -135,6 +139,9 @@ describe('TcpConnectScreen', () => {
       tcpConnect: null,
       tcpPing: null,
       tcpScan: null,
+      icmpPing: null,
+      wifiInfo: null,
+      permissions: null,
     });
     const { getByTestId, getByText } = await renderWithApp(
       <TcpConnectScreen tool={tool('tcp-connect', 'TCP Connect Test')} />,
@@ -147,19 +154,19 @@ describe('TcpConnectScreen', () => {
   });
 });
 
-describe('TcpPingScreen', () => {
+describe('PingScreen', () => {
   it('shows probe lines and loss stats from the report', async () => {
     mockConnect();
     const { getByTestId, getByText } = await renderWithApp(
-      <TcpPingScreen tool={tool('tcp-ping', 'TCP Ping')} />,
+      <PingScreen tool={tool('tcp-ping', 'Ping')} />,
     );
 
-    await fireEvent.press(getByTestId('tcp-ping-submit'));
-    await waitFor(() => expect(getByTestId('tcp-ping-result')).toBeTruthy(), { timeout: 3000 });
+    await fireEvent.press(getByTestId('ping-submit'));
+    await waitFor(() => expect(getByTestId('ping-result')).toBeTruthy(), { timeout: 3000 });
 
     expect(getByText(/1\/2 received/)).toBeTruthy();
     expect(getByText(/loss 50%/)).toBeTruthy();
-    expect(getByTestId('tcp-ping-probe-1').props.children.join(' ')).toContain('ok 20 ms');
+    expect(getByTestId('ping-probe-1').props.children.join(' ')).toContain('ok 20 ms');
   });
 });
 

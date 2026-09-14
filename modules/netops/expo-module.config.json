@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android"],
+  "android": {
+    "modules": ["netops.modules.netops.NetopsModule"]
+  },
+  "apple": {
+    "modules": ["NetopsModule"]
+  }
+}

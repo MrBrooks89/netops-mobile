@@ -184,7 +184,7 @@ export const tcpPingCapability: TcpPingCapability = {
       }
     }
 
-    return ok({ host, port, probes, ...pingStats(probes) });
+    return ok({ method: 'tcp', host, port, probes, ...pingStats(probes) });
   },
 };
 

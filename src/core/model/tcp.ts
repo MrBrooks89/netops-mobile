@@ -40,6 +40,8 @@ export interface TcpConnectReport {
 
 /** Report of a TCP ping series (tcp-ping tool). */
 export interface TcpPingReport {
+  /** Method tag — distinguishes TCP from ICMP ping reports (plan D4). */
+  readonly method: 'tcp';
   readonly host: string;
   readonly port: number;
   readonly probes: readonly TcpProbe[];

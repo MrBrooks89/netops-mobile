@@ -4,81 +4,74 @@ import Foundation
 /**
  * netops — the project's one local Expo module (plan §8; ADR trail M5+).
  *
- * Swift half of the Kotlin module (plan §6.3.2: written alongside, even
- * before a device can run it, so the API never grows Kotlin-shaped).
+ * Swift half of the Kotlin module. Every function resolves the **same JSON
+ * shape** the Android half resolves, so the TypeScript surface in
+ * `modules/netops/src/NetopsModule.ts` is genuinely one contract and the
+ * capability adapters stay platform-agnostic (plan §6.3.2).
  *
- * iOS reality for each function (plan §15):
- *  - Wi-Fi SSID/BSSID need the location permission *plus* the
- *    com.apple.developer.networking.wifi-info entitlement; everything here
- *    returns optionals and the UI renders "unavailable" rows (§6.4).
- *  - ICMP echo needs raw sockets: implemented with a SimplePing-style flow
- *    when the capability ships on iOS; until then isReachable reports
- *    false and the UI stays on its honest "best-effort" label (D4).
- *  - TLS chain capture (M6, #42): URLSession exposes the full trust chain
- *    via the server trust challenge (SecTrustCopyCertificateChain). The
- *    capture is display-only (§16.7) — it never alters validation for any
- *    other request.
+ * iOS reality for each function (plan §10, docs/IOS_PARITY.md):
+ *  - getWifiPermissions / requestWifiPermissions: the Wi-Fi scope maps to
+ *    CoreLocation authorisation, because that is what gates SSID/BSSID on iOS.
+ *    Same `{granted, canAskAgain, status}` shape as Android.
+ *  - getWifiInfo: `NEHotspotNetwork` (needs the wifi-info entitlement) for
+ *    SSID/BSSID; `NWPathMonitor` for transports. Frequency, RSSI and link
+ *    speed have no iOS equivalent, so they are honest `null`s and the UI
+ *    renders explicit "unavailable" rows (§6.4).
+ *  - isReachable: unprivileged ICMP datagram socket (the SimplePing
+ *    approach, see IcmpPing.swift). Best-effort reachability, no privileges,
+ *    no invented timing (D4).
+ *  - getTlsInfo: `URLSession` trust challenge records the chain the server
+ *    presents and the system still decides whether to trust it — there is no
+ *    validation bypass anywhere in this module (§16.7).
+ *  - localSubnet: `getifaddrs` walk for the device's own IPv4 subnet (M7).
+ *  - discoverMdns: Bonjour browse + resolve for the same ten service types
+ *    Android browses (M7; see MdnsBrowse.swift).
+ *
+ * None of these throw: an unavailable platform or a denied permission is a
+ * value the caller renders (plan §6.4).
  */
 public class NetopsModule: Module {
   public func definition() -> ModuleDefinition {
     Name("Netops")
 
-    AsyncFunction("getWifiPermissions") { promise in
-      promise.resolve([
-        "granted": false,
-        "canAskAgain": false,
-        "status": "unavailable",
-      ])
+    AsyncFunction("getWifiPermissions") { (promise: Promise) in
+      WifiAccess.currentPermission { status in
+        promise.resolve(status)
+      }
     }
 
-    AsyncFunction("requestWifiPermissions") { promise in
-      promise.resolve([
-        "granted": false,
-        "canAskAgain": false,
-        "status": "unavailable",
-      ])
+    AsyncFunction("requestWifiPermissions") { (promise: Promise) in
+      WifiAccess.requestPermission { status in
+        promise.resolve(status)
+      }
     }
 
-    AsyncFunction("getWifiInfo") { promise in
-      // NEHotspotNetwork (current SSID) requires the wifi-info entitlement
-      // and returns nil without it — modeled here as "no info", which the
-      // UI renders as explicit unavailable rows rather than blanks.
-      promise.resolve(nil)
+    AsyncFunction("getWifiInfo") { (promise: Promise) in
+      WifiAccess.currentInfo { info in
+        promise.resolve(info)
+      }
     }
 
     AsyncFunction("isReachable") { (host: String, timeoutMs: Int, promise: Promise) in
-      // Best-effort only on iOS until a SimplePing-style capability lands
-      // (plan §15 note 4). Never throw: unreachable is a value.
-      promise.resolve(["reachable": false, "error": "not implemented on this platform"])
+      IcmpPing.probe(host: host, timeoutMs: timeoutMs) { result in
+        promise.resolve(result)
+      }
     }
 
     AsyncFunction("getTlsInfo") { (host: String, port: Int, timeoutMs: Int, promise: Promise) in
-      // M8 groundwork: real chain capture will open a URLSession challenge
-      // and copy SecTrust's chain (SecTrustCopyCertificateChain), mapping
-      // each SecCertificate to the same shape the Kotlin half resolves.
-      // Until the iOS device work lands, the honest answer is the error
-      // value — the tool degrades instead of pretending.
-      promise.resolve(["error": "TLS inspection is not available on this platform yet"])
+      TlsCapture.capture(host: host, port: port, timeoutMs: timeoutMs) { result in
+        promise.resolve(result)
+      }
     }
 
-    AsyncFunction("localSubnet") { promise in
-      // M8 groundwork: getifaddrs walks the interfaces the same way the
-      // Kotlin half walks NetworkInterface. Until then the LAN screen has
-      // no default target and asks for a CIDR — degraded, not broken.
-      promise.resolve(nil)
+    AsyncFunction("localSubnet") { (promise: Promise) in
+      promise.resolve(LocalSubnet.read())
     }
 
     AsyncFunction("discoverMdns") { (windowMs: Int, promise: Promise) in
-      // M8 groundwork: NWBrowser finds Bonjour services without a multicast
-      // lock (iOS has no equivalent), so the Kotlin lock logic has no
-      // counterpart here. Not implemented yet ⇒ the browse reports
-      // unavailable, which is exactly the "TCP sweep only" state the LAN
-      // screen already renders (M7 acceptance).
-      promise.resolve([
-        "services": [],
-        "available": false,
-        "reason": "mDNS browsing is not available on this platform yet",
-      ])
+      MdnsBrowse.browse(windowMs: windowMs) { result in
+        promise.resolve(result)
+      }
     }
   }
 }

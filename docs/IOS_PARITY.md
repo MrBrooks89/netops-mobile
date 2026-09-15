@@ -15,7 +15,8 @@ without auditing it breaks CI rather than quietly leaving this page stale.
 | Mark | Meaning |
 |---|---|
 | **works** | Pure TS or fetch-based. Runs on any platform with no native module. |
-| **built (sim)** | Implemented in the Swift half of `modules/netops` (or in the cross-platform `react-native-tcp-socket`), compiled and smoke-launched in CI on a macOS simulator. Not yet exercised on iOS hardware. |
+| **built (sim)** | Capability-level: implemented in the Swift half of `modules/netops` (or in the cross-platform `react-native-tcp-socket`), compiled and smoke-launched in CI on a macOS simulator. Not yet exercised on iOS hardware. |
+| **gated** | Tool-level: the app's capability registry does not expose this on iOS yet, so the tool renders the degraded-state card. Implemented but not promised — see the note below the tool table. |
 | **gated** | Unavailable in the build being described; the tool renders the degraded-state card from `CapabilityGate` (plan §6.4) instead of failing on run. |
 
 ## Capability availability
@@ -48,13 +49,28 @@ gate checks.
 | `ports-reference` | — | **works** | Bundled dataset, seeded into SQLite. |
 | `dns-lookup` | `dnsResolve` | **works** | DoH only; no system-resolver view (D3). |
 | `reverse-dns` | `dnsReverse` | **works** | DoH only. |
-| `tcp-connect` | `tcpConnect` | **built (sim)** | Local Network permission dialog on first LAN use — never triggered silently on app open (§10.1). |
-| `tcp-ping` | `tcpPing` | **built (sim)** | TCP is the default method; ICMP toggle needs `icmpPing`. |
-| `port-scanner` | `tcpScan` | **built (sim)** | Extra App Store scrutiny for scanning tools (D10); conservative defaults and authorized-use copy are the mitigation. |
-| `http-diagnostics` | `httpProbe` | **built (sim)** | ATS exception is app-wide and deliberate (ADR-007). |
-| `tls-inspector` | `tlsInspect` | **built (sim)** | Certificate chain is display-only; expiry countdown works offline. |
-| `lan-discovery` | `lanDiscovery` | **built (sim)** | Prompt-free until the user starts a sweep; mDNS may need the Bonjour service list to match the browsed types. |
-| `wifi-info` | `wifiInfo` | **built (sim), degraded** | Entitlement + location; frequency/RSSI unavailable → nulls. |
+| `tcp-connect` | `tcpConnect` | **gated** | Local Network permission dialog on first LAN use — never triggered silently on app open (§10.1). |
+| `tcp-ping` | `tcpPing` | **gated** | TCP is the default method; ICMP toggle needs `icmpPing`. |
+| `port-scanner` | `tcpScan` | **gated** | Extra App Store scrutiny for scanning tools (D10); conservative defaults and authorized-use copy are the mitigation. |
+| `http-diagnostics` | `httpProbe` | **gated** | ATS exception is app-wide and deliberate (ADR-007). |
+| `tls-inspector` | `tlsInspect` | **gated** | Certificate chain is display-only; expiry countdown works offline. |
+| `lan-discovery` | `lanDiscovery` | **gated** | Prompt-free until the user starts a sweep; mDNS may need the Bonjour service list to match the browsed types. |
+| `wifi-info` | `wifiInfo` | **gated** | Entitlement + location; frequency/RSSI unavailable → nulls. |
+
+### Why the tool table says "gated" while the capability table says "built (sim)"
+
+Those two columns answer different questions. The Swift halves exist and compile
+(M8, issue #50), but `getCapabilities()` still returns `null` for every native
+capability on iOS, so the app gates those tools. That is deliberate:
+
+- **Claiming a capability promises it works.** Handing iOS screens a `tcpScan`
+  that has never run on an iOS device would turn "not available yet" into "it
+  crashes" — the opposite of the degraded-state contract (§6.4).
+- **M8's acceptance criterion asks for exactly this state**: a bare iOS build
+  that launches, works for everything native-free, and shows degraded cards.
+- Wiring the iOS adapters (and device-verifying them) is M9 work. The seam is
+  ready: when that happens, the change is in `src/platform/registry.ts` alone
+  and every screen keeps working unchanged.
 
 ## What a bare iOS build gives you today
 

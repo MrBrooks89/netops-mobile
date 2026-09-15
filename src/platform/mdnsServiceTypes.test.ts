@@ -32,8 +32,10 @@ const sources: readonly { label: string; path: string }[] = [
     label: 'Kotlin (MDNS_SERVICE_TYPES)',
     path: 'modules/netops/android/src/main/java/netops/modules/netops/NetopsModule.kt',
   },
-  // The Swift browse list joins this guard as soon as it exists (M8, #50), so
-  // the three-way agreement is enforced from the moment there are three lists.
+  {
+    label: 'Swift (MdnsBrowse.serviceTypes)',
+    path: 'modules/netops/ios/MdnsBrowse.swift',
+  },
 ];
 
 describe('mDNS service types', () => {

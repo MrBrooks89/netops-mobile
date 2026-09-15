@@ -9,6 +9,10 @@
 module.exports = {
   preset: 'jest-expo',
   testMatch: ['**/*.test.ts', '**/*.test.tsx'],
+  // Screens render over a real (sql.js) SQLite database, and the first test of
+  // a suite pays for migration + repository setup. 5s is enough in band but not
+  // reliably enough for every worker under the parallel coverage run CI uses.
+  testTimeout: 15_000,
   // pnpm puts packages one level deeper, and expo-router pulls in several
   // ESM-only packages; anything not matching this lookahead is left untransformed
   // and Jest then fails on its `import` statements.

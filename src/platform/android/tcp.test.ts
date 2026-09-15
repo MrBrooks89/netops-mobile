@@ -195,11 +195,12 @@ describe('tcpPingCapability', () => {
       expect(result.value.probes).toHaveLength(4);
       expect(result.value.received).toBe(4);
       expect(result.value.lossPercent).toBe(0);
-      // setTimeout(..., 10) measures >= 10ms; the max spread must hold.
-      expect(result.value.minMs).toBeGreaterThanOrEqual(10);
+      // Node truncates timer delays, so a 10ms timeout can fire at 9ms; the
+      // bounds below carry that 1ms tolerance. The spread is what matters.
+      expect(result.value.minMs).toBeGreaterThanOrEqual(9);
       expect(result.value.minMs).toBeLessThanOrEqual(50);
-      expect(result.value.maxMs).toBeGreaterThanOrEqual(50);
-      expect(result.value.avgMs).toBeGreaterThanOrEqual(25);
+      expect(result.value.maxMs).toBeGreaterThanOrEqual(49);
+      expect(result.value.avgMs).toBeGreaterThanOrEqual(24);
     }
   });
 

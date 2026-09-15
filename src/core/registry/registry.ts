@@ -19,6 +19,8 @@ import { TcpConnectScreen } from '../../features/tcp-connect';
 import { PingScreen } from '../../features/tcp-ping';
 import { PortScannerScreen } from '../../features/port-scanner';
 import { WifiInfoScreen } from '../../features/wifi-info';
+import { HttpDiagnosticsScreen } from '../../features/http-diagnostics';
+import { TlsInspectorScreen } from '../../features/tls-inspector';
 
 export const TOOL_REGISTRY: readonly ToolModule[] = [
   {
@@ -119,7 +121,7 @@ export const TOOL_REGISTRY: readonly ToolModule[] = [
     category: 'connectivity',
     icon: 'globe',
     requiredCapabilities: ['httpProbe'],
-    Component: PlaceholderTool,
+    Component: HttpDiagnosticsScreen,
   },
   {
     id: 'tls-inspector',
@@ -128,7 +130,7 @@ export const TOOL_REGISTRY: readonly ToolModule[] = [
     category: 'connectivity',
     icon: 'shield',
     requiredCapabilities: ['tlsInspect'],
-    Component: PlaceholderTool,
+    Component: TlsInspectorScreen,
   },
   {
     id: 'lan-discovery',

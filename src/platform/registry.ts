@@ -42,21 +42,24 @@ function androidTcp(): Pick<CapabilityMap, 'tcpConnect' | 'tcpPing' | 'tcpScan'>
  * file calls requireNativeModule at module scope, which throws when the
  * native module is absent.
  */
-function androidNetops(): Pick<CapabilityMap, 'icmpPing' | 'wifiInfo' | 'permissions'> {
+function androidNetops(): Pick<
+  CapabilityMap,
+  'icmpPing' | 'wifiInfo' | 'permissions' | 'tlsInspect' | 'httpProbe'
+> {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const netops = require('./android/netops') as {
-    makeIcmpPingCapability: (
-      module: import('./capabilities/icmp').IcmpPingCapability extends never ? never : never,
-    ) => never;
-  } & typeof import('./android/netops');
+  const netops = require('./android/netops') as typeof import('./android/netops');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const http = require('./android/http') as typeof import('./android/http');
   // netopsModule() loads the native handle lazily (first call requires the
   // module package). Calling it here — passing the factory itself would hand
-  // the adapters a function whose methods are all undefined.
+  // the adapters a function whose methods are all undefined (M5 lesson).
   const module = netops.netopsModule();
   return {
     icmpPing: netops.makeIcmpPingCapability(module),
     wifiInfo: netops.makeWifiInfoCapability(module),
     permissions: netops.makePermissionsCapability(module),
+    httpProbe: http.makeHttpProbeCapability(),
+    tlsInspect: http.makeTlsInspectCapability(module),
   };
 }
 
@@ -66,7 +69,13 @@ export function getCapabilities(): CapabilityMap {
   const netops =
     Platform.OS === 'android'
       ? androidNetops()
-      : { icmpPing: null, wifiInfo: null, permissions: null };
+      : {
+          icmpPing: null,
+          wifiInfo: null,
+          permissions: null,
+          httpProbe: null,
+          tlsInspect: null,
+        };
   return {
     dnsResolve: dohCapability,
     dnsReverse: dohCapability,
@@ -76,6 +85,8 @@ export function getCapabilities(): CapabilityMap {
     icmpPing: netops.icmpPing,
     wifiInfo: netops.wifiInfo,
     permissions: netops.permissions,
+    httpProbe: netops.httpProbe,
+    tlsInspect: netops.tlsInspect,
   };
 }
 

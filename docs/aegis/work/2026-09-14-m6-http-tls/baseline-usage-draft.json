@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "aegis.schema.v0",
+  "taskId": "2026-09-14-m6-http-tls",
+  "requiredBaselineRefs": [
+    "plan §6 contracts, §8 native table, §16.4/16.7 security, §18 M6",
+    "ADR-005 operations path, ADR-006 seam pattern",
+    "M4/M5 device-verification lessons (device catches what Jest cannot)"
+  ],
+  "deliveredContextRefs": [],
+  "acknowledgedBeforePlanRefs": [],
+  "citedInPlanRefs": [],
+  "missingRefs": [
+    "plan §6 contracts, §8 native table, §16.4/16.7 security, §18 M6",
+    "ADR-005 operations path, ADR-006 seam pattern",
+    "M4/M5 device-verification lessons (device catches what Jest cannot)"
+  ],
+  "decision": "needs-baseline-readback"
+}

@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "aegis.schema.v0",
+  "baselineRefs": [
+    "plan §6 contracts, §8 native table, §16.4/16.7 security, §18 M6",
+    "ADR-005 operations path, ADR-006 seam pattern",
+    "M4/M5 device-verification lessons (device catches what Jest cannot)"
+  ],
+  "impactStatement": "docs/aegis/work/2026-09-14-m6-http-tls/impact-statement-draft.json",
+  "compatPlan": "CapabilityMap gains httpProbe + tlsInspect (nullable); no existing tool id changes; no new app permission (INTERNET already present)",
+  "retirementPlan": "not-yet-verified",
+  "evidenceBundle": []
+}

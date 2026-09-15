@@ -38,6 +38,8 @@ module.exports = {
     './src/core/util/': { lines: 95 },
     './src/core/model/ping.ts': { lines: 95 },
     './src/core/model/wifi.ts': { lines: 95 },
+    './src/core/model/http.ts': { lines: 95 },
+    './src/core/model/tls.ts': { lines: 95 },
     './src/data/db/': { lines: 95 },
     './src/data/repositories/': { lines: 95 },
     './src/data/settings/': { lines: 95 },

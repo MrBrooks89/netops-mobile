@@ -4,4 +4,6 @@ export type {
   WifiPermissionsResult,
   WifiInfoResult,
   IsReachableResult,
+  TlsInfoResult,
+  TlsCertificateResult,
 } from './src/NetopsModule';

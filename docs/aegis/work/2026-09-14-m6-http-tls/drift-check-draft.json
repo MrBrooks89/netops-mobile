@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "aegis.schema.v0",
+  "taskId": "2026-09-14-m6-http-tls",
+  "taskIntentRef": "docs/aegis/work/2026-09-14-m6-http-tls/task-intent-draft.json",
+  "baselineRefs": [
+    "plan §6 contracts, §8 native table, §16.4/16.7 security, §18 M6",
+    "ADR-005 operations path, ADR-006 seam pattern",
+    "M4/M5 device-verification lessons (device catches what Jest cannot)"
+  ],
+  "scopeStatus": "not-yet-verified",
+  "compatStatus": "not-yet-verified",
+  "retirementStatus": "not-yet-verified",
+  "newRiskSignals": [
+    "first TLS/cert work (trust manager capture); hand-rolled HTTP parser edge cases (chunked encoding, header casing, redirect loops); cleartext policy must be exercised and documented (D9)"
+  ],
+  "decision": "needs-baseline-readback"
+}

@@ -11,7 +11,22 @@ import expo.modules.kotlin.Promise
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 import expo.modules.interfaces.permissions.Permissions
+import java.io.BufferedReader
 import java.net.InetAddress
+import java.net.InetSocketAddress
+import java.net.URL
+import java.security.KeyStore
+import java.security.cert.X509Certificate
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
+import javax.net.ssl.HttpsURLConnection
+import javax.net.ssl.SSLContext
+import javax.net.ssl.SSLSession
+import javax.net.ssl.TrustManager
+import javax.net.ssl.TrustManagerFactory
+import javax.net.ssl.X509TrustManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -31,6 +46,10 @@ import kotlinx.coroutines.withContext
  *  - isReachable: ICMP best-effort reachability via
  *    InetAddress.isReachable (D4: honest "best-effort" label in the UI;
  *    TCP ping is the default, never this).
+ *  - getTlsInfo (M6, plan #42): TLS chain capture for display only
+ *    (§16.7) — a custom X509TrustManager records the chain the server
+ *    presents, then the connection is discarded. It NEVER validates
+ *    anything else, and no global validation bypass exists anywhere.
  */
 class NetopsModule : Module() {
   private val wifiPermissions = arrayOf(
@@ -74,6 +93,110 @@ class NetopsModule : Module() {
         }
       }
     }
+
+    AsyncFunction("getTlsInfo") { host: String, port: Int, timeoutMs: Int, promise: Promise ->
+      CoroutineScope(Dispatchers.IO).launch {
+        try {
+          promise.resolve(captureTlsInfo(host, port, timeoutMs))
+        } catch (e: Exception) {
+          promise.resolve(mapOf("error" to (e.message ?: e.toString())))
+        }
+      }
+    }
+  }
+
+  /**
+   * Capture-only TLS info for the inspector (plan #42, §16.7): the custom
+   * trust manager RECORDS the presented chain and accepts the handshake so
+   * the negotiated session can be read; the connection is closed
+   * immediately after. This accept-or-record instance exists only inside
+   * this method and is discarded with it — every other network call in the
+   * app (DoH, exports, fetches) keeps full system validation.
+   */
+  private fun captureTlsInfo(host: String, port: Int, timeoutMs: Int): Map<String, Any?> {
+    val captured = mutableListOf<X509Certificate>()
+
+    // Chain-capturing trust manager: records whatever the server presents,
+    // leaf first (checkServerTrusted receives it in presented order).
+    val captureManager = object : X509TrustManager {
+      override fun checkClientTrusted(chain: Array<X509Certificate>, authType: String) {}
+      override fun checkServerTrusted(chain: Array<X509Certificate>, authType: String) {
+        captured.addAll(chain)
+      }
+      override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
+    }
+
+    val sslContext = SSLContext.getInstance("TLS")
+    sslContext.init(null, arrayOf<TrustManager>(captureManager), null)
+    val factory = sslContext.socketFactory
+
+    val socket = factory.createSocket() as javax.net.ssl.SSLSocket
+    socket.soTimeout = timeoutMs
+    socket.connect(InetSocketAddress(host, port), timeoutMs)
+    val handshakeStart = System.currentTimeMillis()
+    // SNI + hostname: the presented chain can depend on the name asked for.
+    val sslParams = socket.sslParameters
+    sslParams.endpointIdentificationAlgorithm = "HTTPS"
+    socket.sslParameters = sslParams
+    socket.startHandshake()
+    val tlsMs = System.currentTimeMillis() - handshakeStart
+
+    val session: SSLSession = socket.session
+    val chain = session.peerCertificates.filterIsInstance<X509Certificate>()
+    val certificates = (if (chain.isNotEmpty()) chain else captured).mapIndexed { index, cert ->
+      mapOf(
+        "subject" to cert.subjectX500Principal.name,
+        "issuer" to cert.issuerX500Principal.name,
+        "sans" to sansOf(cert),
+        "notBefore" to isoUtc(cert.notBefore),
+        "notAfter" to isoUtc(cert.notAfter),
+        "serialNumber" to cert.serialNumber.toString(16),
+        "signatureAlgorithm" to cert.sigAlgName,
+        "keyInfo" to keyInfoOf(cert),
+        "selfSigned" to (cert.subjectX500Principal == cert.issuerX500Principal),
+        "position" to index,
+      )
+    }
+    val result = mapOf(
+      "host" to host,
+      "port" to port,
+      "chain" to certificates,
+      "tlsVersion" to session.protocol,
+      "cipherSuite" to session.cipherSuite,
+      "handshakeMs" to tlsMs,
+    )
+    socket.close()
+    return result
+  }
+
+  private fun sansOf(cert: X509Certificate): List<String> {
+    return try {
+      val sanExtension = cert.getSubjectAlternativeNames() ?: return emptyList()
+      sanExtension.mapNotNull { entry ->
+        // entry[0] is the type (2 = DNS); render DNS names only.
+        if (entry.size >= 2 && entry[0] == 2) entry[1]?.toString() else null
+      }
+    } catch (e: Exception) {
+      emptyList()
+    }
+  }
+
+  private fun isoUtc(date: Date): String {
+    val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US)
+    format.timeZone = TimeZone.getTimeZone("UTC")
+    return format.format(date)
+  }
+
+  private fun keyInfoOf(cert: X509Certificate): String {
+    val publicKey = cert.publicKey
+    val algorithm = publicKey.algorithm
+    val bits = when (publicKey) {
+      is java.security.interfaces.RSAPublicKey -> publicKey.modulus.bitLength()
+      is java.security.interfaces.ECPublicKey -> publicKey.params.curve.field.fieldSize
+      is java.security.interfaces.DSAPublicKey -> publicKey.params.p.bitLength()
+      else -> publicKey.encoded?.size?.times(8) ?: 0
+    }
+    return "$algorithm $bits"
   }
 
   private fun resolvePermissions(permissions: Permissions?, promise: Promise) {

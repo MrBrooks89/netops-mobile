@@ -28,3 +28,15 @@ Entries are workspace records, not authoritative runtime decisions.
 | 2026-09-14 | artifact | docs/aegis/work/2026-09-13-m5-ping-wifi/drift-check-draft.json | 2026-09-13-m5-ping-wifi drift check draft |
 | 2026-09-14 | artifact | docs/aegis/work/2026-09-13-m5-ping-wifi/gate-input-pack.json | 2026-09-13-m5-ping-wifi gate input pack |
 | 2026-09-14 | work | docs/aegis/work/2026-09-13-m5-ping-wifi/proof-bundle.md | 2026-09-13-m5-ping-wifi proof bundle |
+| 2026-09-14 | work | docs/aegis/work/2026-09-14-m6-http-tls/10-intent.md | M6 HTTP diagnostics + TLS inspection intent |
+| 2026-09-14 | work | docs/aegis/work/2026-09-14-m6-http-tls/20-checkpoint.md | M6 HTTP diagnostics + TLS inspection checkpoint |
+| 2026-09-14 | work | docs/aegis/work/2026-09-14-m6-http-tls/90-evidence.md | M6 HTTP diagnostics + TLS inspection evidence |
+| 2026-09-14 | work | docs/aegis/work/2026-09-14-m6-http-tls/99-reflection.md | M6 HTTP diagnostics + TLS inspection reflection |
+| 2026-09-14 | artifact | docs/aegis/work/2026-09-14-m6-http-tls/task-intent-draft.json | M6 HTTP diagnostics + TLS inspection task intent draft |
+| 2026-09-14 | artifact | docs/aegis/work/2026-09-14-m6-http-tls/baseline-read-set-hint.json | M6 HTTP diagnostics + TLS inspection baseline read-set hint |
+| 2026-09-14 | artifact | docs/aegis/work/2026-09-14-m6-http-tls/baseline-usage-draft.json | M6 HTTP diagnostics + TLS inspection baseline usage draft |
+| 2026-09-14 | artifact | docs/aegis/work/2026-09-14-m6-http-tls/impact-statement-draft.json | M6 HTTP diagnostics + TLS inspection impact statement draft |
+| 2026-09-14 | artifact | docs/aegis/work/2026-09-14-m6-http-tls/todo-checkpoint-draft.json | M6 HTTP diagnostics + TLS inspection todo checkpoint draft |
+| 2026-09-14 | artifact | docs/aegis/work/2026-09-14-m6-http-tls/drift-check-draft.json | M6 HTTP diagnostics + TLS inspection drift check draft |
+| 2026-09-14 | artifact | docs/aegis/work/2026-09-14-m6-http-tls/gate-input-pack.json | 2026-09-14-m6-http-tls gate input pack |
+| 2026-09-14 | work | docs/aegis/work/2026-09-14-m6-http-tls/proof-bundle.md | 2026-09-14-m6-http-tls proof bundle |

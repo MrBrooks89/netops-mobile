@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "aegis.schema.v0",
+  "candidateDocs": [
+    "plan §6 contracts, §8 native table, §16.4/16.7 security, §18 M6",
+    "ADR-005 operations path, ADR-006 seam pattern",
+    "M4/M5 device-verification lessons (device catches what Jest cannot)"
+  ],
+  "whyRelevant": "M6 is the first milestone with a hand-rolled protocol parser and the first TLS/cert surface; honesty rules and capability seam are the drift risks",
+  "missingAuthority": []
+}

@@ -1,4 +1,5 @@
 import ExpoModulesCore
+import Foundation
 
 /**
  * netops — the project's one local Expo module (plan §8; ADR trail M5+).
@@ -13,6 +14,10 @@ import ExpoModulesCore
  *  - ICMP echo needs raw sockets: implemented with a SimplePing-style flow
  *    when the capability ships on iOS; until then isReachable reports
  *    false and the UI stays on its honest "best-effort" label (D4).
+ *  - TLS chain capture (M6, #42): URLSession exposes the full trust chain
+ *    via the server trust challenge (SecTrustCopyCertificateChain). The
+ *    capture is display-only (§16.7) — it never alters validation for any
+ *    other request.
  */
 public class NetopsModule: Module {
   public func definition() -> ModuleDefinition {
@@ -45,6 +50,15 @@ public class NetopsModule: Module {
       // Best-effort only on iOS until a SimplePing-style capability lands
       // (plan §15 note 4). Never throw: unreachable is a value.
       promise.resolve(["reachable": false, "error": "not implemented on this platform"])
+    }
+
+    AsyncFunction("getTlsInfo") { (host: String, port: Int, timeoutMs: Int, promise: Promise) in
+      // M8 groundwork: real chain capture will open a URLSession challenge
+      // and copy SecTrust's chain (SecTrustCopyCertificateChain), mapping
+      // each SecCertificate to the same shape the Kotlin half resolves.
+      // Until the iOS device work lands, the honest answer is the error
+      // value — the tool degrades instead of pretending.
+      promise.resolve(["error": "TLS inspection is not available on this platform yet"])
     }
   }
 }

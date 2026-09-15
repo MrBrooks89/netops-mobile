@@ -101,6 +101,8 @@ function mockConnect() {
     icmpPing: null,
     wifiInfo: null,
     permissions: null,
+    httpProbe: null,
+    tlsInspect: null,
   });
 }
 
@@ -142,6 +144,8 @@ describe('TcpConnectScreen', () => {
       icmpPing: null,
       wifiInfo: null,
       permissions: null,
+      httpProbe: null,
+      tlsInspect: null,
     });
     const { getByTestId, getByText } = await renderWithApp(
       <TcpConnectScreen tool={tool('tcp-connect', 'TCP Connect Test')} />,

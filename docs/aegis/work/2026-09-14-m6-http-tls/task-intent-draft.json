@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "aegis.schema.v0",
+  "requestedOutcome": "Raw-socket HTTP/1.1 diagnostics (status/headers/redirect chain/phase timings) and TLS chain capture with cert report screens, device-verified",
+  "goal": "All M6 acceptance criteria green on the emulator build",
+  "successEvidence": [],
+  "stopCondition": "Done when acceptance passes on a clean build; blocked if raw sockets cannot deliver a hand-rolled HTTP/1.1 exchange or TLS chain capture on the emulator",
+  "nonGoals": [],
+  "scope": "plan M6 #41-#43 + M6 acceptance criteria (§18)",
+  "changeKinds": [
+    "feature"
+  ],
+  "riskHints": [
+    "first TLS/cert work (trust manager capture); hand-rolled HTTP parser edge cases (chunked encoding, header casing, redirect loops); cleartext policy must be exercised and documented (D9)"
+  ]
+}

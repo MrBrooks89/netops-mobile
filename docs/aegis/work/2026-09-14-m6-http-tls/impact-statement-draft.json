@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "aegis.schema.v0",
+  "affectedLayers": [
+    "modules/netops",
+    "src/platform",
+    "src/core/model",
+    "src/core/registry",
+    "src/features/http-diagnostics",
+    "src/features/tls-inspector"
+  ],
+  "owners": [],
+  "invariants": [
+    "requireNativeModule + tcp-socket imports only under src/platform/android/; core models import nothing from modules/; TLS capture is display-only (never disables validation elsewhere); HTTP diagnostics render parsed text, never HTML (no webview)"
+  ],
+  "compatBoundary": "CapabilityMap gains httpProbe + tlsInspect (nullable); no existing tool id changes; no new app permission (INTERNET already present)",
+  "nonGoals": []
+}

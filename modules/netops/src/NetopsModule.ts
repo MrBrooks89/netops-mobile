@@ -38,11 +38,35 @@ export interface IsReachableResult {
   readonly error?: string;
 }
 
+/** One certificate in the presented chain (native-mapped, display-only). */
+export interface TlsCertificateResult {
+  readonly subject: string;
+  readonly issuer: string;
+  readonly sans: readonly string[];
+  readonly notBefore: string;
+  readonly notAfter: string;
+  readonly serialNumber: string;
+  readonly signatureAlgorithm: string;
+  readonly keyInfo: string;
+  readonly selfSigned: boolean;
+}
+
+export interface TlsInfoResult {
+  readonly host: string;
+  readonly port: number;
+  readonly chain: readonly TlsCertificateResult[];
+  readonly tlsVersion: string | null;
+  readonly cipherSuite: string | null;
+  readonly handshakeMs?: number;
+  readonly error?: string;
+}
+
 interface NativeNetops {
   getWifiPermissions(): Promise<WifiPermissionsResult>;
   requestWifiPermissions(): Promise<WifiPermissionsResult>;
   getWifiInfo(): Promise<WifiInfoResult | null>;
   isReachable(host: string, timeoutMs: number): Promise<IsReachableResult>;
+  getTlsInfo(host: string, port: number, timeoutMs: number): Promise<TlsInfoResult>;
 }
 
 /** The module handle's type — what requireNativeModule<NativeNetops> returns. */

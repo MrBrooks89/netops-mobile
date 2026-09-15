@@ -1,13 +1,12 @@
 /**
  * Central tool registry — the single place tools are declared (D15 contract).
  *
- * M0: placeholder screens for the M1 tool set, so the dashboard, routing,
- * and capability gating are all exercised from day one. Each feature module
- * in M1 will import its real Component here and delete its placeholder.
+ * Every entry points at a real feature module; the dashboard, the generic
+ * `/tool/[id]` route, and capability gating all read this list, so adding a
+ * tool is one directory plus one entry here.
  */
 
 import type { ToolModule } from './types';
-import { PlaceholderTool } from '../../features/_placeholder/PlaceholderTool';
 import { DnsLookupScreen } from '../../features/dns-lookup';
 import { ReverseDnsScreen } from '../../features/reverse-dns';
 import { SubnetCalculatorScreen } from '../../features/subnet-calculator';
@@ -21,6 +20,7 @@ import { PortScannerScreen } from '../../features/port-scanner';
 import { WifiInfoScreen } from '../../features/wifi-info';
 import { HttpDiagnosticsScreen } from '../../features/http-diagnostics';
 import { TlsInspectorScreen } from '../../features/tls-inspector';
+import { LanDiscoveryScreen } from '../../features/lan-discovery';
 
 export const TOOL_REGISTRY: readonly ToolModule[] = [
   {
@@ -139,7 +139,7 @@ export const TOOL_REGISTRY: readonly ToolModule[] = [
     category: 'discovery',
     icon: 'radar',
     requiredCapabilities: ['lanDiscovery'],
-    Component: PlaceholderTool,
+    Component: LanDiscoveryScreen,
   },
   {
     id: 'wifi-info',

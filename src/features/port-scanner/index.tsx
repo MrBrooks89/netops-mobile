@@ -23,6 +23,7 @@ import {
   ToolHeader,
 } from '../../ui/components';
 import { parseHostInput, parsePortList } from '../../core/validation/host';
+import { usePrefilledHost } from '../_shared/deepLink';
 import { PORTS, searchPorts } from '../../core/ports/ports';
 import { err } from '../../core/result/result';
 import { toolError } from '../../core/result/toolError';
@@ -58,7 +59,8 @@ const PRESETS: readonly { label: string; make: () => number[] }[] = [
 ];
 
 export function PortScannerScreen({ tool }: ToolScreenProps) {
-  const [host, setHost] = useState('example.com');
+  // LAN discovery can hand us a host (/tool/port-scanner?host=10.0.2.2).
+  const [host, setHost] = useState(usePrefilledHost('example.com'));
   const [presetIndex, setPresetIndex] = useState(0);
   const [customPorts, setCustomPorts] = useState('');
   const [progress, setProgress] = useState<{

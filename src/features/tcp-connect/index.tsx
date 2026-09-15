@@ -22,6 +22,7 @@ import {
   ToolHeader,
 } from '../../ui/components';
 import { parseHostInput, parsePortInput } from '../../core/validation/host';
+import { usePrefilledHost } from '../_shared/deepLink';
 import { err } from '../../core/result/result';
 import { toolError } from '../../core/result/toolError';
 import type { ToolScreenProps } from '../../core/registry/types';
@@ -42,7 +43,8 @@ const EXAMPLES: readonly { host: string; port: number }[] = [
 ];
 
 export function TcpConnectScreen({ tool }: ToolScreenProps) {
-  const [host, setHost] = useState('example.com');
+  // LAN discovery can hand us a host (/tool/tcp-ping?host=10.0.2.2).
+  const [host, setHost] = useState(usePrefilledHost('example.com'));
   const [portText, setPortText] = useState('443');
 
   const parsedHost = useMemo(() => parseHostInput(host), [host]);

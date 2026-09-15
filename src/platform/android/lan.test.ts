@@ -259,9 +259,43 @@ describe('discover', () => {
       }),
     );
 
-    expect(report.cancelled).toBe(true);
+    expect(report.stopped).toBe('cancelled');
     expect(report.probed).toBeLessThan(254);
     expect(report.durationMs).toBeGreaterThanOrEqual(0);
+  });
+
+  it('reports a time-budget stop as partial coverage, not as a failure', async () => {
+    const scan = fakeScan({}, { onScan: () => undefined });
+    const report = unwrap(
+      await capability(scan).discover(cidr('10.0.2.0', 24), {
+        ports: [80],
+        concurrency: 1,
+        budgetMs: 0,
+      }),
+    );
+
+    expect(report.stopped).toBe('budget');
+    expect(report.probed).toBe(0);
+    expect(report.total).toBe(254);
+    expect(report.hosts).toEqual([]);
+  });
+
+  it('probes one port per socket and reports every open port it finds', async () => {
+    const scan = fakeScan({ '10.0.2.2': [80, 443] });
+    const report = unwrap(
+      await capability(scan).discover(SMALL, { ports: [22, 80, 443], concurrency: 1 }),
+    );
+
+    const calls = (scan.scan as jest.Mock).mock.calls as [string, readonly number[]][];
+    const portsFor = (host: string) =>
+      calls.filter(([called]) => called === host).map(([, ports]) => ports[0]);
+    // Every socket probes exactly one port: the connect pool is the bottleneck.
+    expect(calls.every(([, ports]) => ports.length === 1)).toBe(true);
+    // A host's ports are all probed — a live host refuses its closed ports
+    // instantly, and stopping at the first hit would understate what is open.
+    expect(portsFor('10.0.2.2')).toEqual([22, 80, 443]);
+    expect(portsFor('10.0.2.1')).toEqual([22, 80, 443]);
+    expect(report.hosts[0].openPorts).toEqual([80, 443]);
   });
 
   it('streams throttled progress and always ends at the full count', async () => {

@@ -56,7 +56,7 @@ const report: LanDiscoveryReport = {
   probed: 254,
   total: 254,
   truncated: false,
-  cancelled: false,
+  stopped: 'complete',
   mdns: 'ok',
   ports: [80, 443, 22, 8080],
   durationMs: 3200,
@@ -193,6 +193,22 @@ describe('LanDiscoveryScreen', () => {
     });
   });
 
+  it('says a budget stop left the sweep incomplete, not that the network is empty', async () => {
+    withLanCapabilities({
+      discover: jest
+        .fn()
+        .mockResolvedValue(ok({ ...report, hosts: [], probed: 96, stopped: 'budget' })),
+    });
+    const { getByTestId, getByText } = await renderWithApp(<LanDiscoveryScreen tool={tool} />);
+    await waitFor(() => expect(getByTestId('lan-discovery-cidr').props.value).toBe('10.0.2.0/24'));
+
+    await fireEvent.press(getByTestId('lan-discovery-submit'));
+    await waitFor(() => expect(getByTestId('lan-discovery-budget')).toBeTruthy(), {
+      timeout: 3000,
+    });
+    expect(getByText(/probing 96 of 254 addresses/)).toBeTruthy();
+  });
+
   it('shows the cancelled run as cancelled, keeping the hosts it did find', async () => {
     withLanCapabilities({
       discover: jest.fn().mockImplementation(
@@ -200,7 +216,9 @@ describe('LanDiscoveryScreen', () => {
           new Promise((resolve) => {
             options.onProgress?.({ done: 12, total: 254, found: 1, fraction: 0.05 });
             options.signal.addEventListener('abort', () =>
-              resolve(ok({ ...report, hosts: [report.hosts[0]], probed: 12, cancelled: true })),
+              resolve(
+                ok({ ...report, hosts: [report.hosts[0]], probed: 12, stopped: 'cancelled' }),
+              ),
             );
           }),
       ),

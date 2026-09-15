@@ -137,7 +137,7 @@ describe('runSweep', () => {
 
     expect(result.hits.map((h) => h.ip)).toEqual(['10.0.0.2']);
     expect(result.probed).toBe(4);
-    expect(result.cancelled).toBe(false);
+    expect(result.stopped).toBe('complete');
   });
 
   it('treats a failing probe as "not a host" instead of throwing', async () => {
@@ -185,7 +185,7 @@ describe('runSweep', () => {
       { concurrency: 1, signal: controller.signal },
     );
 
-    expect(result.cancelled).toBe(true);
+    expect(result.stopped).toBe('cancelled');
     expect(result.probed).toBeLessThan(50);
     expect(result.hits.length).toBe(result.probed);
   });
@@ -208,8 +208,43 @@ describe('runSweep', () => {
     expect(progress.length).toBeLessThanOrEqual(3);
   });
 
+  it('stops when the time budget runs out and says so', async () => {
+    const probe = async () => {
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      return null;
+    };
+    const result = await runSweep(
+      Array.from({ length: 200 }, (_, i) => `10.0.0.${i + 1}`),
+      probe,
+      { concurrency: 1, budgetMs: 20 },
+    );
+
+    expect(result.stopped).toBe('budget');
+    expect(result.probed).toBeLessThan(200);
+    expect(result.probed).toBeGreaterThan(0);
+  });
+
+  it('reports completion when the budget is not reached', async () => {
+    const result = await runSweep(hosts, async () => null, { budgetMs: 60_000 });
+    expect(result.stopped).toBe('complete');
+    expect(result.probed).toBe(4);
+  });
+
+  it('prefers "cancelled" over "budget" when both apply', async () => {
+    const controller = new AbortController();
+    const result = await runSweep(
+      hosts,
+      async (ip) => {
+        controller.abort();
+        return hit(ip);
+      },
+      { concurrency: 1, budgetMs: 1, signal: controller.signal },
+    );
+    expect(result.stopped).toBe('cancelled');
+  });
+
   it('handles an empty host list', async () => {
     const result = await runSweep([], async () => null);
-    expect(result).toEqual({ hits: [], cancelled: false, probed: 0 });
+    expect(result).toEqual({ hits: [], stopped: 'complete', probed: 0 });
   });
 });

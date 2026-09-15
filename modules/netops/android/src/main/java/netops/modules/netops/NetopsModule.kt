@@ -221,6 +221,7 @@ class NetopsModule : Module() {
       }
       Log.i(TAG, "mDNS browse start (multicast lock ${if (lock != null) "acquired" else "unavailable"})")
 
+      var started = 0
       for (serviceType in MDNS_SERVICE_TYPES) {
         val listener = object : NsdManager.DiscoveryListener {
           override fun onStartDiscoveryFailed(type: String, errorCode: Int) {
@@ -229,7 +230,9 @@ class NetopsModule : Module() {
 
           override fun onStopDiscoveryFailed(type: String, errorCode: Int) {}
 
-          override fun onDiscoveryStarted(type: String) {}
+          override fun onDiscoveryStarted(type: String) {
+            started += 1
+          }
 
           override fun onDiscoveryStopped(type: String) {}
 
@@ -250,6 +253,14 @@ class NetopsModule : Module() {
       }
 
       delay(windowMs.toLong())
+
+      // "Heard nothing" and "could not listen" are different answers, and the
+      // screen says so. This is the state a denied local-network permission
+      // produces (ADR-009): NsdManager refuses every browse while the TCP
+      // sweep still works, so the report must not claim mDNS was fine.
+      if (started == 0 && unavailableReason == null) {
+        unavailableReason = "mDNS discovery could not start"
+      }
     } catch (e: Exception) {
       unavailableReason = e.message ?: e.toString()
     } finally {

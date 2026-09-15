@@ -23,6 +23,7 @@ import type { Ipv4Cidr } from '../../core/ip/cidr';
 import { v4CidrOf } from '../../core/ip/cidr';
 import { parseV4 } from '../../core/ip/ip';
 import type { LanHit } from '../../core/lan/lan';
+import type { PortScanResult } from '../../core/model/tcp';
 import { mergeLanHits, planSweep, summarizeSweep } from '../../core/lan/lan';
 import { runSweep } from '../../core/lan/sweep';
 import { err, ok, type Result } from '../../core/result/result';
@@ -35,13 +36,14 @@ import type {
   LanMdnsState,
 } from '../capabilities/lan';
 import {
+  DEFAULT_LAN_BUDGET_MS,
   DEFAULT_LAN_CONCURRENCY,
   DEFAULT_LAN_PORTS,
   DEFAULT_LAN_TIMEOUT_MS,
   DEFAULT_MDNS_WINDOW_MS,
   MAX_LAN_PROBE_PORTS,
 } from '../capabilities/lan';
-import { MAX_SCAN_CONCURRENCY, type TcpScanCapability } from '../capabilities/tcp';
+import type { TcpScanCapability } from '../capabilities/tcp';
 import { netopsModule } from './netops';
 
 /** The native calls this adapter needs — the seam the tests fake. */
@@ -128,9 +130,6 @@ export function makeLanDiscoveryCapability(deps: LanDiscoveryDeps): LanDiscovery
 
       const sweepConcurrency = Math.max(1, options.concurrency ?? DEFAULT_LAN_CONCURRENCY);
       const timeoutMs = options.timeoutMs ?? DEFAULT_LAN_TIMEOUT_MS;
-      // Each in-flight host scans its ports in parallel, so the socket
-      // ceiling is concurrency × ports (see DEFAULT_LAN_CONCURRENCY).
-      const hostConcurrency = Math.min(ports.value.length, MAX_SCAN_CONCURRENCY);
       const total = plan.value.hosts.length;
       const startedAt = Date.now();
 
@@ -150,13 +149,22 @@ export function makeLanDiscoveryCapability(deps: LanDiscoveryDeps): LanDiscovery
       const sweep = await runSweep(
         plan.value.hosts,
         async (ip, signal) => {
-          const scanned = await deps.tcpScan.scan(ip, ports.value, {
-            signal,
-            timeoutMs,
-            concurrency: hostConcurrency,
-          });
-          if (!scanned.ok) return null;
-          const open = scanned.value.ports.filter((result) => result.verdict === 'open');
+          // One port at a time per host: the socket layer's connect pool is
+          // tiny (see DEFAULT_LAN_CONCURRENCY), so probing a host's ports in
+          // parallel only queues sockets that will be killed as "slow".
+          //
+          // Every port is probed even after one answers. A live host refuses
+          // its closed ports immediately, so those extra probes are cheap, and
+          // stopping at the first hit would report "Open: 3000" for a host
+          // that also has 8000 open — a true row that reads as a false one.
+          const open: PortScanResult[] = [];
+          for (const port of ports.value) {
+            if (signal?.aborted) break;
+            const scanned = await deps.tcpScan.scan(ip, [port], { signal, timeoutMs });
+            if (!scanned.ok) continue;
+            const hit = scanned.value.ports.find((result) => result.verdict === 'open');
+            if (hit) open.push(hit);
+          }
           if (open.length === 0) return null;
           const latencies = open
             .map((result) => result.latencyMs)
@@ -172,28 +180,29 @@ export function makeLanDiscoveryCapability(deps: LanDiscoveryDeps): LanDiscovery
         {
           concurrency: sweepConcurrency,
           signal: options.signal,
+          budgetMs: options.budgetMs ?? DEFAULT_LAN_BUDGET_MS,
           progressIntervalMs: options.progressIntervalMs,
           onProgress: (progress) => emit(progress.done, progress.found),
         },
       );
 
       const browse = await browsePromise;
-      const hosts = mergeLanHits(sweep.hits, mdnsHits(browse.services));
-      emit(sweep.probed, hosts.length);
+      const hits = mergeLanHits(sweep.hits, mdnsHits(browse.services));
+      emit(sweep.probed, hits.length);
 
       const mdns: LanMdnsState = !wantMdns ? 'off' : browse.available ? 'ok' : 'unavailable';
       return ok({
         cidr: plan.value.cidr,
-        hosts,
+        hosts: hits,
         probed: sweep.probed,
         total: plan.value.total,
         truncated: plan.value.truncated,
-        cancelled: sweep.cancelled,
+        stopped: sweep.stopped,
         mdns,
         mdnsReason: mdns === 'unavailable' ? browse.reason : undefined,
         ports: ports.value,
         durationMs: Date.now() - startedAt,
-        summary: summarizeSweep(hosts),
+        summary: summarizeSweep(hits),
       });
     },
   };

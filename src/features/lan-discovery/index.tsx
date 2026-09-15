@@ -34,7 +34,10 @@ import type { ToolScreenProps } from '../../core/registry/types';
 import { err } from '../../core/result/result';
 import { toolError } from '../../core/result/toolError';
 import type { LanDiscoveryReport, LanProgress } from '../../platform/capabilities/lan';
-import { DEFAULT_LAN_PORTS } from '../../platform/capabilities/lan';
+import {
+  DEFAULT_LAN_BUDGET_MS as LAN_BUDGET_MS,
+  DEFAULT_LAN_PORTS,
+} from '../../platform/capabilities/lan';
 import { getCapabilities } from '../../platform/registry';
 import { useOperation } from '../../platform/operations/useOperation';
 import { useAppData } from '../../providers/AppProviders';
@@ -216,8 +219,9 @@ export function LanDiscoveryScreen({ tool }: ToolScreenProps) {
           />
         </View>
         <StyledText dim style={{ fontSize: 11, marginTop: 6 }}>
-          {parsedPorts?.length ?? DEFAULT_LAN_PORTS.length} ports per address · cancels any time.
-          Only scan networks you own or have permission to test.
+          {parsedPorts?.length ?? DEFAULT_LAN_PORTS.length} ports per address, up to{' '}
+          {LAN_BUDGET_MS / 1000}s · cancels any time. Only scan networks you own or have permission
+          to test.
         </StyledText>
       </Card>
 
@@ -259,8 +263,16 @@ export function LanDiscoveryScreen({ tool }: ToolScreenProps) {
         <Card testID="lan-discovery-result">
           <SectionTitle>
             {report.cidr} — {report.summary} in {(report.durationMs / 1000).toFixed(1)}s
-            {report.cancelled ? ' (cancelled)' : ''}
+            {report.stopped === 'cancelled' ? ' (cancelled)' : ''}
           </SectionTitle>
+
+          {report.stopped === 'budget' && (
+            <Note tone="warn" testID="lan-discovery-budget">
+              Stopped at the {(LAN_BUDGET_MS / 1000).toFixed(0)}s time budget after probing{' '}
+              {report.probed} of {report.total} addresses. Addresses that stay silent cost the full
+              timeout each — narrow the CIDR or shorten the port list for a complete sweep.
+            </Note>
+          )}
 
           {report.mdns === 'unavailable' && (
             <Note tone="warn" testID="lan-discovery-mdns-unavailable">

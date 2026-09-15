@@ -12,19 +12,36 @@
  */
 
 import type { LanHit, LanSource } from '../../core/lan/lan';
+import type { SweepStop } from '../../core/lan/sweep';
 import type { Ipv4Cidr } from '../../core/ip/cidr';
 import type { Result } from '../../core/result/result';
 
 /** Ports probed on every address by default: a small, high-signal set. */
 export const DEFAULT_LAN_PORTS: readonly number[] = [80, 443, 22, 8080];
-/** Per-connect timeout. Short, because most of a sweep is silence. */
-export const DEFAULT_LAN_TIMEOUT_MS = 800;
 /**
- * Addresses probed in parallel. Each in-flight host scans at most
- * `ports.length` sockets, so the worst-case socket count is
- * 16 hosts × 4 ports = 64 — deliberately bounded (plan §16.9).
+ * Per-connect timeout. A LAN host that is up answers in single-digit
+ * milliseconds (accept or RST); anything slower is silence, and silence is
+ * what a sweep mostly meets.
  */
-export const DEFAULT_LAN_CONCURRENCY = 16;
+export const DEFAULT_LAN_TIMEOUT_MS = 500;
+/**
+ * Hosts probed in parallel, one port at a time each.
+ *
+ * Deliberately small, and coupled to the socket layer: Android's TCP library
+ * runs connects on a **fixed 2-thread pool** (ADR-006), so probes beyond that
+ * queue up, and a socket that waits in the queue is indistinguishable from a
+ * slow one — it eventually trips the adapter's watchdog and is reported as
+ * timed out. Four in flight keeps both threads fed while the worst-case queue
+ * wait stays under the watchdog's slack. Raising this does **not** speed up a
+ * silent network: the native pool is the ceiling.
+ */
+export const DEFAULT_LAN_CONCURRENCY = 4;
+/**
+ * Default time budget. On a network that refuses connections, a /24 finishes
+ * in seconds; on one that drops them, the same sweep is minutes of timeouts.
+ * Twenty seconds bounds the wait and the screen reports the partial coverage.
+ */
+export const DEFAULT_LAN_BUDGET_MS = 20_000;
 /** Hard cap on the probe list; the sweep never opens more than this. */
 export const MAX_LAN_PROBE_PORTS = 32;
 /** How long the optional mDNS browse listens before it gives up. */
@@ -65,7 +82,8 @@ export interface LanDiscoveryReport {
   readonly total: number;
   /** True when the block was larger than the cap, so coverage is partial. */
   readonly truncated: boolean;
-  readonly cancelled: boolean;
+  /** Why the sweep stopped: fully probed, cancelled, or out of time. */
+  readonly stopped: SweepStop;
   readonly mdns: LanMdnsState;
   /** Why mDNS was unavailable, when it was. */
   readonly mdnsReason?: string;
@@ -85,6 +103,8 @@ export interface LanDiscoveryOptions {
   readonly concurrency?: number;
   /** Per-connect timeout; defaults to DEFAULT_LAN_TIMEOUT_MS. */
   readonly timeoutMs?: number;
+  /** Stop scheduling probes after this long; defaults to DEFAULT_LAN_BUDGET_MS. */
+  readonly budgetMs?: number;
   /** Cap on probed addresses (defaults to DEFAULT_MAX_HOSTS). */
   readonly maxHosts?: number;
   /** Browse mDNS as a second source. Defaults to on when available. */

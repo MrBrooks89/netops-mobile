@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "netops-mobile",
-    "slug": "netops-mobile",
+    "name": "NetOps Toolkit",
+    "slug": "netops-toolkit",
     "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -9,7 +9,7 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.netopsmobile",
+      "bundleIdentifier": "tech.mrbrooks.netops",
       "infoPlist": {
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true
@@ -40,11 +40,21 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.netopsmobile"
+      "package": "tech.mrbrooks.netops",
+      "versionCode": 1,
+      "allowBackup": false,
+      "blockedPermissions": [
+        "android.permission.SYSTEM_ALERT_WINDOW"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": ["expo-router", "expo-sqlite", "expo-sharing", "./plugins/withCleartext"]
+    "plugins": [
+      "expo-router",
+      "expo-sqlite",
+      "expo-sharing",
+      "./plugins/withCleartext"
+    ]
   }
 }

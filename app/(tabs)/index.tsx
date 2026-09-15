@@ -231,6 +231,7 @@ function iconName(name: string): keyof typeof Ionicons.glyphMap {
     'git-network': 'git-network',
     'swap-horizontal': 'swap-horizontal',
     layers: 'layers',
+    planet: 'planet',
     list: 'list',
     search: 'search',
     'arrow-undo': 'arrow-undo',

@@ -13,6 +13,7 @@ import { SubnetCalculatorScreen } from '../../features/subnet-calculator';
 import { CidrCalculatorScreen } from '../../features/cidr-calculator';
 import { WildcardMaskScreen } from '../../features/wildcard-mask-calculator';
 import { VlsmCalculatorScreen } from '../../features/vlsm-calculator';
+import { Ipv6CalculatorScreen } from '../../features/ipv6-calculator';
 import { PortsReferenceScreen } from '../../features/ports-reference';
 import { TcpConnectScreen } from '../../features/tcp-connect';
 import { PingScreen } from '../../features/tcp-ping';
@@ -58,6 +59,15 @@ export const TOOL_REGISTRY: readonly ToolModule[] = [
     icon: 'layers',
     requiredCapabilities: [],
     Component: VlsmCalculatorScreen,
+  },
+  {
+    id: 'ipv6-calculator',
+    title: 'IPv6 Calculator',
+    description: 'IPv6 address + prefix → network, range, block size, scope',
+    category: 'ipv6',
+    icon: 'planet',
+    requiredCapabilities: [],
+    Component: Ipv6CalculatorScreen,
   },
   {
     id: 'ports-reference',

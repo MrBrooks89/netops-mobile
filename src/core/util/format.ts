@@ -16,6 +16,15 @@ export function groupDigits(n: number): string {
   return sign + Math.abs(n).toString().replace(GROUP, ',');
 }
 
+/**
+ * Bigint sibling of `groupDigits` for the IPv6 block sizes, which exceed
+ * Number.MAX_SAFE_INTEGER (2^64 addresses in a single /64).
+ */
+export function groupDigitsBig(n: bigint): string {
+  const sign = n < 0n ? '-' : '';
+  return sign + (n < 0n ? -n : n).toString().replace(GROUP, ',');
+}
+
 /** "1 host" / "254 hosts" */
 export function hostsLabel(n: number): string {
   return `${groupDigits(n)} ${n === 1 ? 'host' : 'hosts'}`;

@@ -2,6 +2,7 @@ import { parseV4 } from './ip';
 import { unwrap } from '../result/result';
 import {
   asV4Cidr,
+  asV6Cidr,
   assertV4Prefix,
   cidrToString,
   isV4HostMask,
@@ -144,7 +145,24 @@ describe('asV4Cidr', () => {
     if (!bad.ok) {
       expect(bad.error.code).toBe('INVALID_INPUT');
       expect(bad.error.message).toContain('IPv4');
+      // Names the tool that does handle it, now that the tool exists.
+      expect(bad.error.message).toContain('IPv6 Calculator');
+    }
+  });
+});
+
+describe('asV6Cidr', () => {
+  it('passes IPv6 through and points IPv4 at the subnet calculator', () => {
+    const good = asV6Cidr(unwrap(parseCidr('2001:db8::/32')));
+    expect(good.ok).toBe(true);
+    if (good.ok) expect(good.value.address.value).toBe('2001:db8::');
+
+    const bad = asV6Cidr(unwrap(parseCidr('192.168.1.0/24')));
+    expect(bad.ok).toBe(false);
+    if (!bad.ok) {
+      expect(bad.error.code).toBe('INVALID_INPUT');
       expect(bad.error.message).toContain('IPv6');
+      expect(bad.error.message).toContain('Subnet Calculator');
     }
   });
 });

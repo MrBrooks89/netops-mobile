@@ -128,6 +128,7 @@ describe('CapabilityGate', () => {
       'cidr-calculator',
       'wildcard-mask-calculator',
       'vlsm-calculator',
+      'ipv6-calculator',
       'ports-reference',
       'dns-lookup',
       'reverse-dns',

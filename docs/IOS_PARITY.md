@@ -46,6 +46,7 @@ gate checks.
 | `cidr-calculator` | — | **works** | Pure math, including split/aggregate. |
 | `wildcard-mask-calculator` | — | **works** | Pure math. |
 | `vlsm-calculator` | — | **works** | Pure greedy allocator. |
+| `ipv6-calculator` | — | **works** | Pure `src/core` maths over 128-bit values (bigint), including the exact block size, scope classification and the /64 rules. Added after M8, which is why the parity guard exists: the audit had to be extended for it. |
 | `ports-reference` | — | **works** | Bundled dataset, seeded into SQLite. |
 | `dns-lookup` | `dnsResolve` | **works** | DoH only; no system-resolver view (D3). |
 | `reverse-dns` | `dnsReverse` | **works** | DoH only. |
@@ -78,7 +79,7 @@ This is the M8 acceptance criterion, and it is what the CI simulator smoke test
 exercises: a build with **no** native capabilities available still launches and
 works for everything that does not need native code —
 
-- the four IPv4 calculators and the ports reference,
+- the four IPv4 calculators, the IPv6 calculator, and the ports reference,
 - saved hosts and networks, history (including filters and drill-in), export
   through the share sheet,
 - Settings (theme, retention, DoH provider),

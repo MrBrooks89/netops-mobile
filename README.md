@@ -4,7 +4,24 @@ A cross-platform networking toolkit for beginners, IT support, network
 engineers, and security professionals. Android-first (built and tested on
 Fedora Linux), architected for iOS later without a rewrite.
 
-**Status:** M6 complete (raw-socket HTTP/1.1 diagnostics + TLS inspector with chain capture, expiry warnings, and export; cleartext per ADR-007) — next: M7 (history browser + tool filters). Implementation plan in [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md)
+**Status:** Android is feature-complete for the plan's scope and release-ready —
+14 tools (IPv4 calculators, IPv6 calculator, ports reference, DNS/reverse DNS,
+TCP connect, ping, port scanner, HTTP diagnostics, TLS inspector, LAN discovery,
+Wi-Fi info), plus saved hosts/networks, history, filters, export and settings.
+Android has been device-verified milestone by milestone (M3–M7); a release build
+is minified, split per ABI, and covered by scripted artifact checks. **iOS is
+deferred** until an Apple developer account exists — the Swift halves are
+written and compile in CI, but the capability registry deliberately still gates
+them ([parity matrix](docs/IOS_PARITY.md)).
+
+The one planned tool that had not shipped — the IPv6 calculator — landed in the
+post-M8 gap-closing pass, along with the Wi-Fi gateway/DNS rows the tool
+promised and a cleanup of an unused dependency.
+
+**Docs:** [implementation plan](docs/IMPLEMENTATION_PLAN.md) ·
+[Android release runbook](docs/RELEASE_ANDROID.md) ·
+verification records ([M2](docs/M2_VERIFICATION.md), [M4](docs/M4_VERIFICATION.md), [M7](docs/M7_VERIFICATION.md), [M8](docs/M8_VERIFICATION.md)) ·
+[ADRs](docs/adr)
 
 ## Stack
 
@@ -34,8 +51,21 @@ sudo dnf copr enable zeno/scrcpy && sudo dnf install scrcpy
 scrcpy -s emulator-5554
 
 # Quality gates (same as CI)
-pnpm typecheck && pnpm lint && pnpm format:check && pnpm test
+pnpm typecheck && pnpm lint && pnpm check:platform && pnpm format:check && pnpm test
 ```
+
+## Cutting an Android release
+
+```bash
+(cd android && ./gradlew assembleRelease)   # per-ABI APKs + a universal APK
+node scripts/check-android-manifest.mjs     # asserts the built manifest
+scripts/android-release-smoke.sh            # installs, launches, exercises tools
+
+(cd android && ./gradlew bundleRelease)     # AAB for Google Play
+```
+
+Full details, including signing via EAS and the Play checklist:
+[docs/RELEASE_ANDROID.md](docs/RELEASE_ANDROID.md).
 
 > **First launch of a fresh dev-client build** shows the Expo dev launcher:
 > enter `10.0.2.2:8081` and tap Connect (or pick the auto-discovered

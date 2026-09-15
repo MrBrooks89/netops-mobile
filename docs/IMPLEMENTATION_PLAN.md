@@ -1,6 +1,6 @@
 # NetOps Mobile — Implementation Plan
 
-**Status:** M0 complete · M1 complete · M2 complete · M3 complete · M4 complete · M5 complete · M6 complete · M7 complete (device-verified — `docs/M7_VERIFICATION.md`) · M8 complete (CI-verified on a macOS runner — `docs/M8_VERIFICATION.md`) · feature audit gaps closed (IPv6 calculator, Wi-Fi gateway/DNS, unused Detox removed) · M9 next
+**Status:** M0 complete · M1 complete · M2 complete · M3 complete · M4 complete · M5 complete · M6 complete · M7 complete (device-verified — `docs/M7_VERIFICATION.md`) · M8 complete (CI-verified on a macOS runner — `docs/M8_VERIFICATION.md`) · feature audit gaps closed (IPv6 calculator, Wi-Fi gateway/DNS, unused Detox removed) · Android release-ready (real identity, R8, per-ABI APKs — `docs/RELEASE_ANDROID.md`) · iOS deferred pending an Apple developer account · M9 next
 **Target:** React Native + Expo + TypeScript, Android-first on Fedora Linux, iOS later, optional Linux remote probe later
 **Prime directives:** simplicity, maintainability, independently-addable tool modules, small first milestone
 

@@ -34,6 +34,7 @@ module.exports = {
     './src/core/subnet/': { lines: 95 },
     './src/core/vlsm/': { lines: 95 },
     './src/core/ports/': { lines: 95 },
+    './src/core/lan/': { lines: 95 },
     './src/core/validation/': { lines: 95 },
     './src/core/util/': { lines: 95 },
     './src/core/model/ping.ts': { lines: 95 },

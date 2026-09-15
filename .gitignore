@@ -38,6 +38,8 @@ yarn-error.*
 
 # test output
 /coverage/
+# smoke-test screenshots written by scripts/ios-smoke.sh
+/artifacts/
 
 # generated native folders
 /ios

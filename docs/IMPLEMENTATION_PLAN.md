@@ -1,6 +1,6 @@
 # NetOps Mobile — Implementation Plan
 
-**Status:** M0 complete · M1 complete · M2 complete · M3 complete · M4 complete · M5 complete · M6 complete · M7 complete (device-verified — `docs/M7_VERIFICATION.md`) · M8 next
+**Status:** M0 complete · M1 complete · M2 complete · M3 complete · M4 complete · M5 complete · M6 complete · M7 complete (device-verified — `docs/M7_VERIFICATION.md`) · M8 complete (CI-verified on a macOS runner — `docs/M8_VERIFICATION.md`) · M9 next
 **Target:** React Native + Expo + TypeScript, Android-first on Fedora Linux, iOS later, optional Linux remote probe later
 **Prime directives:** simplicity, maintainability, independently-addable tool modules, small first milestone
 
@@ -653,7 +653,9 @@ Raw-socket HTTP/1.1 client (status, headers, redirects chain, timing phases DNS/
 TCP sweep engine (bounded concurrency; ARP dropped — unreachable for apps on Android 10+, ADR-008), optional mDNS via `NsdManager` (multicast lock held only during scan); discovered-hosts list with source badges, feed-forward into saved hosts / port scanner / ping; dashboard recents + favorites; onboarding copy (authorized use + privacy).
 
 ### M8 — iOS groundwork (audit + parity, not full port) (2–3 days + later device work)
-Capability parity audit vs §6 contracts; Swift halves implemented for whatever is feasible without macOS hardware (compile/type-check via CI mac runner or collaborator); Info.plist keys (Local Network usage, Bonjour services, ATS exceptions), entitlements list documented; degraded-state matrix tested (which tools run on a bare iOS build: calculators, ports, saved data, history, export, DoH DNS — everything except native-gated tools).
+Capability parity audit vs §6 contracts (`docs/IOS_PARITY.md`, drift-guarded); Swift halves implemented for the whole `netops` surface — and, because this host has no macOS, compiled and launched by an ephemeral **`macos-26` CI job** (which is what M8's third acceptance criterion needs; the runner is free on a public repo). Info.plist keys (Local Network usage, Bonjour services, ATS exceptions) and the wifi-info entitlement documented in ADR-010 and asserted against the *built* plist. Degraded-state matrix: capability gating renders the §6.4 card for every native-gated tool, unit-tested registry-wide on the iOS capability map.
+
+Deliberate split: the Swift halves exist and compile, but `getCapabilities()` still reports iOS as unavailable (M9 wires them). Claiming a capability promises it works, and none of the Swift has run on hardware yet.
 
 ### M9+ — Deferred roadmap
 Full iOS port; remote Linux probe (WebSocket agent + `RemoteProbeCapabilities`); background scan service; more IPv6 feature tools (expanded beyond calculators); batch/multi-target operations; watch companion (never, probably 😄).
@@ -835,7 +837,7 @@ Each issue carries its milestone's acceptance criteria (§17/§18) as a checklis
 | D14 | Wi-Fi SSID location-permission UX (Android 9+ needs location *services on*) | hide feature vs explain + degrade | **Explain + degrade** with a dedicated rationale card; classic Android gotcha | M5 |
 | D15 | Tool registry shape freeze | ad-hoc screens vs registry contract | **Freeze registry contract at M0** (`id/category/capabilities/Component`); it's the module-system seam — churn here touches every tool | M0 |
 | D16 | IPv6 scope creep | full v6 tools now vs types-now-tools-later | **Types + calculators-ready core now; v6 feature screens M2+** — prevents the v4-only rewrite | M1 core, M2 UI |
-| D17 | iOS native module parity without macOS hardware | Swift-now vs Swift-when-iOS-starts | **Swift halves written with each Kotlin module** (Expo Modules API makes it cheap); type-check via CI mac runner | M5 onward |
+| D17 | iOS native module parity without macOS hardware | Swift-now vs Swift-when-iOS-starts | **Swift halves written with each Kotlin module**, compiled and smoke-launched by a `macos-26` CI job (M8) — resolved: the runner builds Release for the simulator and installs/launches it, so "Swift-now" is verified rather than aspirational | Resolved M8 |
 | D18 | Probe protocol (future) | design now vs preserve seam only | **Seam only** (§3.6): JSON-serializable capabilities + pure core. Zero probe code before Android is stable | N/A (M9+) |
 
 **Standing risk register (maintained in `docs/risks.md`):** community-lib abandonment (mitigated: custom-module fallback designed per §8), OEM network stack quirks (manual matrix §15), Play/App Store policy changes for security tools (conservative UX + TestFlight fallback), JS-bridge perf on scans (batched native APIs — §3.3), history DB bloat (D11).

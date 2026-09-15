@@ -44,7 +44,9 @@ jobs:
   # M8: the only place an iOS build can be compiled and launched, since the
   # project has no macOS hardware. Runner is free because this repo is public.
   ios:
-    runs-on: macos-15
+    # Xcode 26: expo-modules-jsi's Package.swift declares swift-tools-version
+    # 6.2, so Xcode 16's Swift 6.1 cannot resolve it (found by this job).
+    runs-on: macos-26
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
@@ -61,10 +63,22 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Report toolchain versions
+      - name: Select the newest Xcode and report toolchain versions
         run: |
+          latest="$(ls -d /Applications/Xcode*.app 2>/dev/null | sort -V | tail -1)"
+          if [ -n "$latest" ]; then
+            echo "Selecting $latest"
+            sudo xcode-select -s "$latest/Contents/Developer"
+          fi
           xcodebuild -version
           xcrun simctl list runtimes | tail -5
+
+      # Fail here, with a readable message, rather than inside a pod script.
+      - name: Require Swift 6.2 or newer
+        run: |
+          swift --version
+          swift --version | grep -qE "Swift version 6\.([2-9]|[1-9][0-9])" \
+            || { echo "::error::expo-modules-jsi needs swift-tools-version 6.2 (Xcode 26+); this runner has an older Swift."; exit 1; }
 
       # CNG: ios/ is generated, never committed (ADR-001).
       - name: Prebuild the iOS project
@@ -74,8 +88,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ios/Pods
-          key: pods-${{ runner.os }}-${{ hashFiles('ios/Podfile.lock') }}
-          restore-keys: pods-${{ runner.os }}-
+          key: pods-macos26-${{ hashFiles('ios/Podfile.lock') }}
+          restore-keys: pods-macos26-
 
       - name: Install pods
         run: pod install --project-directory=ios

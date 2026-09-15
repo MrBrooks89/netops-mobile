@@ -4,6 +4,8 @@ on:
   push:
     branches: [main, master]
   pull_request:
+  # The ios job can be run on demand (it is the slow one).
+  workflow_dispatch:
 
 jobs:
   test:
@@ -38,3 +40,75 @@ jobs:
 
       - name: Unit tests + core coverage thresholds
         run: pnpm test:coverage --ci
+
+  # M8: the only place an iOS build can be compiled and launched, since the
+  # project has no macOS hardware. Runner is free because this repo is public.
+  ios:
+    runs-on: macos-15
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Report toolchain versions
+        run: |
+          xcodebuild -version
+          xcrun simctl list runtimes | tail -5
+
+      # CNG: ios/ is generated, never committed (ADR-001).
+      - name: Prebuild the iOS project
+        run: npx expo prebuild -p ios --no-install
+
+      - name: Cache CocoaPods
+        uses: actions/cache@v4
+        with:
+          path: ios/Pods
+          key: pods-${{ runner.os }}-${{ hashFiles('ios/Podfile.lock') }}
+          restore-keys: pods-${{ runner.os }}-
+
+      - name: Install pods
+        run: pod install --project-directory=ios
+
+      - name: Check the generated iOS declarations
+        run: node scripts/check-ios-plist.mjs ios/netopsmobile/Info.plist
+
+      # Release so the JS bundle is embedded: the smoke test then needs no Metro.
+      - name: Build for the simulator
+        run: |
+          xcodebuild \
+            -workspace ios/netopsmobile.xcworkspace \
+            -scheme netopsmobile \
+            -configuration Release \
+            -sdk iphonesimulator \
+            -derivedDataPath ios/build \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Check the built app's declarations
+        run: |
+          node scripts/check-ios-plist.mjs \
+            ios/build/Build/Products/Release-iphonesimulator/netopsmobile.app/Info.plist
+
+      - name: Boot, launch and screenshot the app
+        run: scripts/ios-smoke.sh
+
+      - name: Upload the smoke screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-smoke
+          path: artifacts/ios
+          if-no-files-found: warn
+          retention-days: 14

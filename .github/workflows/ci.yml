@@ -84,6 +84,21 @@ jobs:
       - name: Prebuild the iOS project
         run: npx expo prebuild -p ios --no-install
 
+      # The workspace, scheme and app names all follow app.json's slug, so they
+      # are read from the generated project rather than written out here — a
+      # rename in app.json must not need a CI edit.
+      - name: Resolve generated project names
+        id: ios
+        run: |
+          # The .xcodeproj exists right after prebuild; the workspace only
+          # appears once CocoaPods has run, so its path is constructed from the
+          # same name rather than listed here.
+          project="$(ls -d ios/*.xcodeproj | head -1)"
+          scheme="$(basename "$project" .xcodeproj)"
+          echo "scheme=$scheme" >> "$GITHUB_OUTPUT"
+          echo "workspace=ios/$scheme.xcworkspace" >> "$GITHUB_OUTPUT"
+          echo "Using scheme $scheme (workspace ios/$scheme.xcworkspace)"
+
       - name: Cache CocoaPods
         uses: actions/cache@v4
         with:
@@ -95,14 +110,14 @@ jobs:
         run: pod install --project-directory=ios
 
       - name: Check the generated iOS declarations
-        run: node scripts/check-ios-plist.mjs ios/netopsmobile/Info.plist
+        run: node scripts/check-ios-plist.mjs "$(ls -d ios/*/Info.plist | head -1)"
 
       # Release so the JS bundle is embedded: the smoke test then needs no Metro.
       - name: Build for the simulator
         run: |
           xcodebuild \
-            -workspace ios/netopsmobile.xcworkspace \
-            -scheme netopsmobile \
+            -workspace ${{ steps.ios.outputs.workspace }} \
+            -scheme ${{ steps.ios.outputs.scheme }} \
             -configuration Release \
             -sdk iphonesimulator \
             -derivedDataPath ios/build \
@@ -113,7 +128,7 @@ jobs:
       - name: Check the built app's declarations
         run: |
           node scripts/check-ios-plist.mjs \
-            ios/build/Build/Products/Release-iphonesimulator/netopsmobile.app/Info.plist
+            "ios/build/Build/Products/Release-iphonesimulator/${{ steps.ios.outputs.scheme }}.app/Info.plist"
 
       - name: Boot, launch and screenshot the app
         run: scripts/ios-smoke.sh

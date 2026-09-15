@@ -19,13 +19,14 @@
 # The dialog is captured as `deep-link-confirmation.png` so the limitation is
 # documented by evidence rather than by comment.
 #
-# Usage: scripts/ios-smoke.sh [path/to/netopsmobile.app] [artifact-dir]
+# Usage: scripts/ios-smoke.sh [path/to/<app>.app] [artifact-dir]
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-APP="${1:-$ROOT/ios/build/Build/Products/Release-iphonesimulator/netopsmobile.app}"
+# Default to whatever the build produced: the app name follows app.json's slug.
+APP="${1:-$(ls -d "$ROOT"/ios/build/Build/Products/Release-iphonesimulator/*.app 2>/dev/null | head -1)}"
 OUT="${2:-$ROOT/artifacts/ios}"
-BUNDLE_ID="com.anonymous.netopsmobile"
+BUNDLE_ID="$(node -e "process.stdout.write(require('$ROOT/app.json').expo.ios.bundleIdentifier)")"
 # How long to let the bundle load and the first frame render before judging.
 SETTLE_SECONDS="${SETTLE_SECONDS:-25}"
 
@@ -65,7 +66,7 @@ if ! xcrun simctl spawn "$UDID" launchctl list | grep -q "$BUNDLE_ID"; then
   echo "ios-smoke: $BUNDLE_ID is not running ${SETTLE_SECONDS}s after launch" >&2
   echo "--- recent app log ---" >&2
   xcrun simctl spawn "$UDID" log show --last 2m --style compact \
-    --predicate "processImagePath CONTAINS \"netopsmobile\"" 2>/dev/null | tail -40 >&2 || true
+    --predicate "processImagePath CONTAINS \"$(basename "$APP" .app)\"" 2>/dev/null | tail -40 >&2 || true
   xcrun simctl io "$UDID" screenshot "$OUT/crashed.png" || true
   exit 1
 fi

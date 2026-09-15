@@ -24,6 +24,20 @@ const settings = JSON.parse(readFileSync(join(ROOT, 'app.json'), 'utf8')).expo;
 const infoPlist = settings.ios?.infoPlist ?? {};
 const entitlements = settings.ios?.entitlements ?? {};
 
+/**
+ * `plutil` is macOS-only, which is where this check belongs (the iOS build runs
+ * on a mac runner). Failing without a word about that is unhelpful, so it is
+ * detected up front.
+ */
+const hasPlutil = () => {
+  try {
+    execFileSync('plutil', ['-help'], { stdio: 'ignore' });
+    return true;
+  } catch (error) {
+    return error?.code !== 'ENOENT';
+  }
+};
+
 /** plutil → JSON; a missing or unreadable file is a hard failure. */
 function readPlist(path) {
   if (!existsSync(path)) {
@@ -74,6 +88,11 @@ function checkEntitlements(path) {
       fail(`${path.replace(`${ROOT}/`, '')}: entitlement ${key} is not ${JSON.stringify(value)}`);
     }
   }
+}
+
+if (!hasPlutil()) {
+  console.error('This check needs macOS: it uses plutil to read the iOS plists.');
+  process.exit(2);
 }
 
 const targets = process.argv.slice(2);

@@ -50,6 +50,13 @@ enum WifiAccess {
    * transports.
    */
   static func currentInfo(completion: @escaping ([String: Any]) -> Void) {
+    // Main thread because of `CLLocationManager` below (see currentPermission).
+    onMain {
+      currentInfoOnMain(completion: completion)
+    }
+  }
+
+  private static func currentInfoOnMain(completion: @escaping ([String: Any]) -> Void) {
     transports { transportInfo in
       var info = transportInfo
       info["ssid"] = NSNull()

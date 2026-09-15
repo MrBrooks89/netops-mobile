@@ -52,6 +52,11 @@ scrcpy -s emulator-5554
 
 # Quality gates (same as CI)
 pnpm typecheck && pnpm lint && pnpm check:platform && pnpm format:check && pnpm test
+
+# Before pushing, in case a dependency was added: CI installs with
+# --frozen-lockfile and re-checks pnpm's supply-chain quarantine, which can
+# reject a freshly published version (see pnpm-workspace.yaml).
+pnpm install --frozen-lockfile
 ```
 
 ## Cutting an Android release

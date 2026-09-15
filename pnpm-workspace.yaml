@@ -3,8 +3,14 @@ allowBuilds:
   detox: true
   dtrace-provider: true
   unrs-resolver: true
+# pnpm quarantines releases newer than a day (supply-chain protection). Expo
+# pins exact SDK-57 versions that are occasionally inside that window, so
+# `npx expo install <pkg>` adds an entry here to allow the version the SDK
+# requires. CI installs with --frozen-lockfile and re-verifies these policies,
+# so an entry added locally must be committed with the lockfile.
 minimumReleaseAgeExclude:
   - expo-clipboard@57.0.2
   - expo-file-system@57.0.7
   - expo-sharing@57.0.19
   - expo-sqlite@57.0.3
+  - expo-build-properties@57.0.18

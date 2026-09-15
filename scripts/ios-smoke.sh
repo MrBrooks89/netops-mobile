@@ -15,6 +15,9 @@ OUT="${2:-$ROOT/artifacts/ios}"
 BUNDLE_ID="com.anonymous.netopsmobile"
 # How long to let the bundle load and the first frame render before judging.
 SETTLE_SECONDS="${SETTLE_SECONDS:-25}"
+# A route opened by URL still has to boot the app (Release build, embedded
+# bundle), so it needs most of the same budget.
+ROUTE_SETTLE_SECONDS="${ROUTE_SETTLE_SECONDS:-25}"
 
 if [[ ! -d "$APP" ]]; then
   echo "ios-smoke: no app bundle at $APP" >&2
@@ -60,18 +63,67 @@ fi
 xcrun simctl io "$UDID" screenshot "$OUT/dashboard.png"
 echo "ios-smoke: captured dashboard.png"
 
+# Routes are opened by URL, in two ways, because they are not equivalent:
+#   cold  — terminate first, so the URL arrives as the app's launch URL and
+#           expo-router sees it on the first render;
+#   warm  — the URL is delivered to the running app.
+# A route screenshot that is byte-identical to the dashboard means the URL did
+# not route at all, which is exactly the sort of silent no-op this script
+# exists to catch, so each route must differ from the dashboard in at least one
+# mode. The mode that worked is reported, and every screenshot is uploaded.
+open_route() {
+  local url="$1" name="$2"
+  xcrun simctl terminate "$UDID" "$BUNDLE_ID" 2>/dev/null || true
+  sleep 2
+  xcrun simctl openurl "$UDID" "$url"
+  sleep "$ROUTE_SETTLE_SECONDS"
+  xcrun simctl io "$UDID" screenshot "$OUT/$name-cold.png"
+  echo "ios-smoke: captured $name-cold.png"
+}
+
+open_route_warm() {
+  local url="$1" name="$2"
+  xcrun simctl openurl "$UDID" "$url"
+  sleep 8
+  xcrun simctl io "$UDID" screenshot "$OUT/$name-warm.png"
+  echo "ios-smoke: captured $name-warm.png"
+}
+
+assert_routed() {
+  local name="$1" label="$2"
+  local cold="$OUT/$name-cold.png" warm="$OUT/$name-warm.png"
+  if ! cmp -s "$OUT/dashboard.png" "$cold" || ! cmp -s "$OUT/dashboard.png" "$warm"; then
+    # Keep a stable name for the mode that actually rendered the route.
+    if ! cmp -s "$OUT/dashboard.png" "$cold"; then
+      cp "$cold" "$OUT/$name.png"
+    else
+      cp "$warm" "$OUT/$name.png"
+    fi
+    echo "ios-smoke: $label routed"
+    return 0
+  fi
+  echo "::error::ios-smoke: $label did not route — both screenshots are identical to the dashboard"
+  xcrun simctl spawn "$UDID" log show --last 3m --style compact \
+    --predicate "processImagePath CONTAINS \"netopsmobile\"" 2>/dev/null | tail -30 >&2 || true
+  return 1
+}
+
 # The native-gated tool: on this build every native capability is null, so the
 # route must render the degraded card rather than a screen that fails on run.
-xcrun simctl openurl "$UDID" "netops://tool/port-scanner"
-sleep 6
-xcrun simctl io "$UDID" screenshot "$OUT/tool-gated.png"
-echo "ios-smoke: captured tool-gated.png"
+open_route "netops://tool/port-scanner" "tool-gated"
+open_route_warm "netops://tool/port-scanner" "tool-gated"
 
 # A pure tool must still work in the same build.
-xcrun simctl openurl "$UDID" "netops://tool/subnet-calculator"
-sleep 6
-xcrun simctl io "$UDID" screenshot "$OUT/tool-available.png"
-echo "ios-smoke: captured tool-available.png"
+open_route "netops://tool/subnet-calculator" "tool-available"
+open_route_warm "netops://tool/subnet-calculator" "tool-available"
+
+failed=0
+assert_routed "tool-gated" "the native-gated tool screen" || failed=1
+assert_routed "tool-available" "the always-available tool screen" || failed=1
+if [[ "$failed" -ne 0 ]]; then
+  xcrun simctl terminate "$UDID" "$BUNDLE_ID" 2>/dev/null || true
+  exit 1
+fi
 
 xcrun simctl terminate "$UDID" "$BUNDLE_ID" 2>/dev/null || true
 echo "ios-smoke: ok"

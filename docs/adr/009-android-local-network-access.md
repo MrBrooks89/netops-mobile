@@ -53,6 +53,27 @@ Two consequences worth stating plainly:
    the SDK bump should both mention it, because the platform reports it as a
    timeout rather than a denial.
 
+## Device evidence (M7 verification, API 36)
+
+The opt-in was exercised deliberately on the emulator
+(`adb shell am compat enable RESTRICT_LOCAL_NETWORK <pkg>`, reboot), with
+fixtures listening on the LAN and confirmed reachable **from the device shell**
+at that moment:
+
+- TCP: the sweep ran to completion and reported "no hosts found" in 10.6 s —
+  every connect silently failed, exactly the failure mode predicted above. No
+  crash, no error code, no permission dialog.
+- mDNS: `NsdManager` **accepted** every browse registration and heard nothing.
+  There was no `onStartDiscoveryFailed` and no permission error, so the only
+  honest report is "browsed, heard nothing". The adapter additionally reports
+  `available: false` ("mDNS discovery could not start") when NSD refuses
+  outright — the documented Android 17 behaviour — which is unit-tested rather
+  than device-exercised, because a dev-client build cannot produce that refusal
+  today (see `docs/M7_VERIFICATION.md`).
+
+The restriction was then disabled and the device rebooted; the sweep found the
+fixtures again.
+
 ## Consequences
 
 - No new permission is requested today (least privilege, plan §9's staged

@@ -1,6 +1,6 @@
 # NetOps Mobile — Implementation Plan
 
-**Status:** M0 complete · M1 complete · M2 complete · M3 complete · M4 complete · M5 complete · M6 complete · M7 next
+**Status:** M0 complete · M1 complete · M2 complete · M3 complete · M4 complete · M5 complete · M6 complete · M7 complete (device-verified — `docs/M7_VERIFICATION.md`) · M8 next
 **Target:** React Native + Expo + TypeScript, Android-first on Fedora Linux, iOS later, optional Linux remote probe later
 **Prime directives:** simplicity, maintainability, independently-addable tool modules, small first milestone
 

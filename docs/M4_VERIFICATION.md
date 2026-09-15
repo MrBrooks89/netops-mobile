@@ -60,8 +60,14 @@ plan already contradicts itself here (§7 library table: "Detox later (M8)";
 §7 test strategy + #34: "Detox from M4"), so M4 ships the fixture harness +
 script smoke — same flow, same assertions, tooling the environment supports
 — and full Detox-or-Maestro adoption stays an explicit M8 E2E decision with
-the rest of the tooling. `detox` remains installed as a devDependency for
-that future work; nothing in the app depends on it.
+the rest of the tooling.
+
+**M8 follow-up, and closure of this deviation.** M8 made the decision: E2E
+stays script-driven (`scripts/e2e-smoke.sh` for the Android emulator,
+`scripts/ios-smoke.sh` for the macOS CI simulator, which boots, installs,
+launches and screenshots the app). Detox was never configured and no test
+depended on it, so the post-M8 cleanup removed it from devDependencies —
+along with ~800 lines of lockfile and a standing peer-dependency warning.
 
 ## Three real bugs found by this verification
 

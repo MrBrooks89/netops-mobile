@@ -1,6 +1,6 @@
 # NetOps Mobile — Implementation Plan
 
-**Status:** M0 complete · M1 complete · M2 complete · M3 complete · M4 complete · M5 complete · M6 complete · M7 complete (device-verified — `docs/M7_VERIFICATION.md`) · M8 complete (CI-verified on a macOS runner — `docs/M8_VERIFICATION.md`) · M9 next
+**Status:** M0 complete · M1 complete · M2 complete · M3 complete · M4 complete · M5 complete · M6 complete · M7 complete (device-verified — `docs/M7_VERIFICATION.md`) · M8 complete (CI-verified on a macOS runner — `docs/M8_VERIFICATION.md`) · feature audit gaps closed (IPv6 calculator, Wi-Fi gateway/DNS, unused Detox removed) · M9 next
 **Target:** React Native + Expo + TypeScript, Android-first on Fedora Linux, iOS later, optional Linux remote probe later
 **Prime directives:** simplicity, maintainability, independently-addable tool modules, small first milestone
 
@@ -50,7 +50,7 @@ Deliberately **not** in MVP: DNS, TCP/ping/port scanning, HTTP/TLS, Wi-Fi, LAN d
 - Saved hosts/networks + SQLite storage (hosts, networks)
 - Ports reference from DB (replace bundled JSON)
 - Export/share results (Share sheet + file export)
-- IPv6 subnet/CIDR calculator (core is already address-family-aware)
+- IPv6 subnet/CIDR calculator (core is already address-family-aware) — **shipped after M8**, when the feature audit found this the one planned tool that had never landed
 - Calculator "saved results" and history of calculator runs
 
 ### 1.2 Milestone 3 (first networked features — still pure JS via HTTP)
@@ -376,7 +376,7 @@ Every tool screen implements, via registry metadata: `unavailable (module)`, `un
 | Share/export | `expo-sharing` + `expo-file-system` + `expo-print` (optional PDF) | Share sheet needs no permissions on either OS |
 | Permissions | `react-native-permissions` (M5) OR Expo Modules calls | evaluate when Wi-Fi/ping land |
 | Logging | small logger util in `core` (levels, redaction) | `react-native-logs` optional; never raw `console` in production paths |
-| Tests | Jest + `@testing-library/react-native`; Detox later (M8) | Expo-standard; pure `core` tests need no RN |
+| Tests | Jest + `@testing-library/react-native`; Detox evaluated and **not adopted** | E2E runs through `scripts/e2e-smoke.sh` (Android emulator + TCP/HTTP fixtures) and `scripts/ios-smoke.sh` (macOS CI simulator); Detox was removed as an unused devDependency |
 | Native modules | Expo Modules API (`modules/netops`) | for ping(ICMP)/TLS/WiFi/ARP — Kotlin+Swift halves together |
 | Lint/format | ESLint (typescript-eslint) + Prettier + `tsc --noEmit` in CI | |
 
@@ -787,7 +787,7 @@ Full iOS port; remote Linux probe (WebSocket agent + `RemoteProbeCapabilities`);
 - #31 `platform:android`: TcpScan batched adapter (progress, cancel, concurrency caps)
 - #32 `tool:tcp-connect`: connectivity test screen
 - #33 `tool:port-scanner`: port scanner screen (presets, progress, cancel, service names)
-- #34 `infra`: Detox setup + TCP fixture server harness
+- #34 `infra`: Detox setup + TCP fixture server harness — **fixture harness shipped; Detox not adopted** (`scripts/e2e-smoke.sh` covers the same path; see M4 verification and the post-M8 cleanup)
 
 ### M5 — Ping + Wi-Fi
 - #35 `area:native`: `modules/netops` scaffold (Kotlin + Swift skeletons, CNG wiring)
@@ -836,7 +836,7 @@ Each issue carries its milestone's acceptance criteria (§17/§18) as a checklis
 | D13 | React 19/New Architecture bridgeless compat for chosen native libs | assume works vs verify | **Verify in #29 spike** (interop layer usually present; don't get surprised in M4) | M4 spike |
 | D14 | Wi-Fi SSID location-permission UX (Android 9+ needs location *services on*) | hide feature vs explain + degrade | **Explain + degrade** with a dedicated rationale card; classic Android gotcha | M5 |
 | D15 | Tool registry shape freeze | ad-hoc screens vs registry contract | **Freeze registry contract at M0** (`id/category/capabilities/Component`); it's the module-system seam — churn here touches every tool | M0 |
-| D16 | IPv6 scope creep | full v6 tools now vs types-now-tools-later | **Types + calculators-ready core now; v6 feature screens M2+** — prevents the v4-only rewrite | M1 core, M2 UI |
+| D16 | IPv6 scope creep | full v6 tools now vs types-now-tools-later | **Types + calculators-ready core now; v6 feature screens later** — resolved: the v6 calculator shipped after M8 over the M1-era core with no core rework, which is exactly the outcome this decision was for | Resolved (post-M8) |
 | D17 | iOS native module parity without macOS hardware | Swift-now vs Swift-when-iOS-starts | **Swift halves written with each Kotlin module**, compiled and smoke-launched by a `macos-26` CI job (M8) — resolved: the runner builds Release for the simulator and installs/launches it, so "Swift-now" is verified rather than aspirational | Resolved M8 |
 | D18 | Probe protocol (future) | design now vs preserve seam only | **Seam only** (§3.6): JSON-serializable capabilities + pure core. Zero probe code before Android is stable | N/A (M9+) |
 

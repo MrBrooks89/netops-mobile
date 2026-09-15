@@ -9,10 +9,27 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
+      "bundleIdentifier": "com.anonymous.netopsmobile",
       "infoPlist": {
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true
-        }
+        },
+        "NSLocalNetworkUsageDescription": "NetOps Toolkit sends traffic to your local network only when you ask it to: a LAN sweep, a port scan, a ping, or an HTTP/TLS check against an address you entered. It never scans on its own.",
+        "NSBonjourServices": [
+          "_http._tcp",
+          "_https._tcp",
+          "_ipp._tcp",
+          "_printer._tcp",
+          "_googlecast._tcp",
+          "_airplay._tcp",
+          "_raop._tcp",
+          "_ssh._tcp",
+          "_smb._tcp",
+          "_workstation._tcp"
+        ]
+      },
+      "entitlements": {
+        "com.apple.developer.networking.wifi-info": true
       }
     },
     "android": {

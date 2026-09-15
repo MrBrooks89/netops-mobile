@@ -103,6 +103,7 @@ function mockConnect() {
     permissions: null,
     httpProbe: null,
     tlsInspect: null,
+    lanDiscovery: null,
   });
 }
 
@@ -146,6 +147,7 @@ describe('TcpConnectScreen', () => {
       permissions: null,
       httpProbe: null,
       tlsInspect: null,
+      lanDiscovery: null,
     });
     const { getByTestId, getByText } = await renderWithApp(
       <TcpConnectScreen tool={tool('tcp-connect', 'TCP Connect Test')} />,

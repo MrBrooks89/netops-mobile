@@ -12,8 +12,14 @@ import { V4_MAX, type Ipv4Cidr } from '../ip/cidr';
 import { err, ok, type Result } from '../result/result';
 import { toolError } from '../result/toolError';
 
-/** How a host was found. Results carry every source that saw it. */
-export type LanSource = 'tcp' | 'mdns' | 'arp';
+/**
+ * How a host was found. Results carry every source that saw it.
+ *
+ * There is no `arp` source: reading `/proc/net/arp` is blocked for apps on
+ * Android 10+, so the plan's "best-effort ARP" (D5) would be an always-empty
+ * source on every supported device. Dropped at M7.
+ */
+export type LanSource = 'tcp' | 'mdns';
 
 export interface LanHit {
   readonly ip: string;
@@ -85,7 +91,7 @@ export function planSweep(cidr: Ipv4Cidr, options: { maxHosts?: number } = {}): 
   });
 }
 
-const SOURCE_ORDER: readonly LanSource[] = ['tcp', 'mdns', 'arp'];
+const SOURCE_ORDER: readonly LanSource[] = ['tcp', 'mdns'];
 
 /**
  * Merge probe results from different discovery sources into one hit per address.

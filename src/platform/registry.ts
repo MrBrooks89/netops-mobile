@@ -63,6 +63,19 @@ function androidNetops(): Pick<
   };
 }
 
+/**
+ * LAN discovery (M7): the pure-TS sweep engine driven by the M4 TCP scan
+ * primitive, plus the `netops` module for mDNS and the local subnet. Built
+ * only when TCP scanning exists — without sockets there is no sweep, so the
+ * capability is genuinely absent rather than a stub that always fails.
+ */
+function androidLan(tcpScan: CapabilityMap['tcpScan']): CapabilityMap['lanDiscovery'] {
+  if (!tcpScan) return null;
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const lan = require('./android/lan') as typeof import('./android/lan');
+  return lan.makeLanDiscoveryCapability({ tcpScan, native: lan.lanNativeSurface() });
+}
+
 export function getCapabilities(): CapabilityMap {
   const tcp =
     Platform.OS === 'android' ? androidTcp() : { tcpConnect: null, tcpPing: null, tcpScan: null };
@@ -87,6 +100,7 @@ export function getCapabilities(): CapabilityMap {
     permissions: netops.permissions,
     httpProbe: netops.httpProbe,
     tlsInspect: netops.tlsInspect,
+    lanDiscovery: androidLan(tcp.tcpScan),
   };
 }
 

@@ -60,5 +60,25 @@ public class NetopsModule: Module {
       // value — the tool degrades instead of pretending.
       promise.resolve(["error": "TLS inspection is not available on this platform yet"])
     }
+
+    AsyncFunction("localSubnet") { promise in
+      // M8 groundwork: getifaddrs walks the interfaces the same way the
+      // Kotlin half walks NetworkInterface. Until then the LAN screen has
+      // no default target and asks for a CIDR — degraded, not broken.
+      promise.resolve(nil)
+    }
+
+    AsyncFunction("discoverMdns") { (windowMs: Int, promise: Promise) in
+      // M8 groundwork: NWBrowser finds Bonjour services without a multicast
+      // lock (iOS has no equivalent), so the Kotlin lock logic has no
+      // counterpart here. Not implemented yet ⇒ the browse reports
+      // unavailable, which is exactly the "TCP sweep only" state the LAN
+      // screen already renders (M7 acceptance).
+      promise.resolve([
+        "services": [],
+        "available": false,
+        "reason": "mDNS browsing is not available on this platform yet",
+      ])
+    }
   }
 }

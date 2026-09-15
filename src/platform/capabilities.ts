@@ -23,6 +23,7 @@ import type { WifiInfoCapability } from './capabilities/wifi';
 import type { PermissionsCapability } from './permissions';
 import type { HttpProbeCapability } from './capabilities/http';
 import type { TlsInspectCapability } from './capabilities/tls';
+import type { LanDiscoveryCapability } from './capabilities/lan';
 
 export interface DnsQueryOptions {
   /** Base endpoint, no query string, e.g. https://cloudflare-dns.com/dns-query */
@@ -59,6 +60,8 @@ export interface CapabilityMap {
   readonly httpProbe: HttpProbeCapability | null;
   /** TLS chain capture for display (M6, §16.7); null without the module. */
   readonly tlsInspect: TlsInspectCapability | null;
+  /** LAN sweep + optional mDNS (M7); null without TCP sockets. */
+  readonly lanDiscovery: LanDiscoveryCapability | null;
 }
 
 export const DEFAULT_DNS_TIMEOUT_MS = 10_000;
@@ -72,3 +75,12 @@ export type { WifiInfoCapability } from './capabilities/wifi';
 export type { PermissionScope, PermissionState, PermissionsCapability } from './permissions';
 export type { HttpProbeCapability, HttpProbeOptions } from './capabilities/http';
 export type { TlsInspectCapability, TlsInspectOptions } from './capabilities/tls';
+export type {
+  LanDiscoveryCapability,
+  LanDiscoveryOptions,
+  LanDiscoveryReport,
+  LanMdnsState,
+  LanProgress,
+  MdnsBrowse,
+  MdnsService,
+} from './capabilities/lan';

@@ -6,4 +6,7 @@ export type {
   IsReachableResult,
   TlsInfoResult,
   TlsCertificateResult,
+  LocalSubnetResult,
+  MdnsServiceResult,
+  MdnsBrowseResult,
 } from './src/NetopsModule';

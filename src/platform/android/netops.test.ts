@@ -23,6 +23,8 @@ function fakeNetops(overrides: Partial<NetopsModule> = {}): NetopsModule {
     getWifiInfo: jest.fn().mockResolvedValue(null),
     isReachable: jest.fn().mockResolvedValue({ reachable: false }),
     getTlsInfo: jest.fn().mockResolvedValue({ error: 'not implemented in fake' }),
+    localSubnet: jest.fn().mockResolvedValue(null),
+    discoverMdns: jest.fn().mockResolvedValue({ services: [], available: true }),
     ...overrides,
   };
 }

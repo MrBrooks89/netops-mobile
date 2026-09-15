@@ -61,12 +61,41 @@ export interface TlsInfoResult {
   readonly error?: string;
 }
 
+/** The device's own IPv4 subnet, for a one-tap "scan my network" (M7). */
+export interface LocalSubnetResult {
+  readonly address: string;
+  readonly prefixLength: number;
+}
+
+/** One service instance the mDNS browse heard from (M7). */
+export interface MdnsServiceResult {
+  readonly name: string;
+  readonly host: string | null;
+  readonly addresses: readonly string[];
+  readonly port: number | null;
+  readonly serviceType: string;
+}
+
+/**
+ * Outcome of one mDNS browse. `available: false` means the browse could not
+ * run at all (no NSD service, or the multicast lock was denied) — the LAN
+ * screen then says "TCP sweep only" instead of pretending nothing is out
+ * there. A browse that ran and heard nothing is `available: true`.
+ */
+export interface MdnsBrowseResult {
+  readonly services: readonly MdnsServiceResult[];
+  readonly available: boolean;
+  readonly reason?: string;
+}
+
 interface NativeNetops {
   getWifiPermissions(): Promise<WifiPermissionsResult>;
   requestWifiPermissions(): Promise<WifiPermissionsResult>;
   getWifiInfo(): Promise<WifiInfoResult | null>;
   isReachable(host: string, timeoutMs: number): Promise<IsReachableResult>;
   getTlsInfo(host: string, port: number, timeoutMs: number): Promise<TlsInfoResult>;
+  localSubnet(): Promise<LocalSubnetResult | null>;
+  discoverMdns(windowMs: number): Promise<MdnsBrowseResult>;
 }
 
 /** The module handle's type — what requireNativeModule<NativeNetops> returns. */

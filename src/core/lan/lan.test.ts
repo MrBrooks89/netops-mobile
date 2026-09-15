@@ -75,14 +75,13 @@ describe('mergeLanHits', () => {
   it('merges sources for the same address and keeps the useful parts', () => {
     const merged = mergeLanHits(
       [hit('192.168.1.5', { openPorts: [80], latencyMs: 12 })],
-      [hit('192.168.1.5', { sources: ['mdns'], hostname: 'printer.lan' })],
-      [hit('192.168.1.5', { sources: ['arp'], latencyMs: 4 })],
+      [hit('192.168.1.5', { sources: ['mdns'], hostname: 'printer.lan', latencyMs: 4 })],
     );
 
     expect(merged).toHaveLength(1);
     expect(merged[0]).toMatchObject({
       ip: '192.168.1.5',
-      sources: ['tcp', 'mdns', 'arp'],
+      sources: ['tcp', 'mdns'],
       hostname: 'printer.lan',
       openPorts: [80],
       latencyMs: 4, // the lowest latency wins
@@ -92,7 +91,7 @@ describe('mergeLanHits', () => {
   it('unions a port found by two sources and de-duplicates', () => {
     const merged = mergeLanHits(
       [hit('10.0.0.2', { openPorts: [22, 443] })],
-      [hit('10.0.0.2', { sources: ['arp'], openPorts: [443, 8080] })],
+      [hit('10.0.0.2', { sources: ['mdns'], openPorts: [443, 8080] })],
     );
     expect(merged[0].openPorts).toEqual([22, 443, 8080]);
   });
@@ -104,9 +103,9 @@ describe('mergeLanHits', () => {
 
   it('normalizes source and port order on the first sighting too', () => {
     const merged = mergeLanHits([
-      hit('10.0.0.5', { sources: ['arp', 'tcp'], openPorts: [443, 22] }),
+      hit('10.0.0.5', { sources: ['mdns', 'tcp'], openPorts: [443, 22] }),
     ]);
-    expect(merged[0].sources).toEqual(['tcp', 'arp']);
+    expect(merged[0].sources).toEqual(['tcp', 'mdns']);
     expect(merged[0].openPorts).toEqual([22, 443]);
   });
 
@@ -123,9 +122,9 @@ describe('summarizeSweep', () => {
       summarizeSweep([
         hit('10.0.0.1'),
         hit('10.0.0.2', { sources: ['tcp', 'mdns'] }),
-        hit('10.0.0.3', { sources: ['arp'] }),
+        hit('10.0.0.3', { sources: ['mdns'] }),
       ]),
-    ).toBe('3 hosts (tcp 2, mdns 1, arp 1)');
+    ).toBe('3 hosts (tcp 2, mdns 2)');
   });
 });
 

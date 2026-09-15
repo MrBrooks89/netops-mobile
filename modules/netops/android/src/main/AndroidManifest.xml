@@ -7,4 +7,7 @@
   <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
   <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
   <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+  <!-- mDNS/SSDP receive during LAN discovery (M7, plan §9): needed for the
+       MulticastLock that browseMdns holds only while the browse runs. -->
+  <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
 </manifest>

@@ -5,5 +5,11 @@
   "main": "index.ts",
   "types": "src/NetopsModule.ts",
   "license": "UNLICENSED",
-  "private": true
+  "private": true,
+  "author": "MrBrooks89",
+  "homepage": "https://github.com/MrBrooks89/netops-mobile#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MrBrooks89/netops-mobile.git"
+  }
 }

@@ -18,6 +18,8 @@ export const SETTINGS_KEYS = {
   historyRetentionLimit: 'settings.historyRetentionLimit',
   dohProvider: 'settings.dohProvider',
   customDohUrl: 'settings.customDohUrl',
+  favoriteToolIds: 'settings.favoriteToolIds',
+  onboardingDismissed: 'settings.onboardingDismissed',
 } as const;
 
 export const RETENTION_MIN = 10;
@@ -26,12 +28,23 @@ export const RETENTION_MAX = 5000;
 /** How many runs history keeps by default; the history path reuses this cap. */
 export const DEFAULT_HISTORY_RETENTION = 500;
 
+/**
+ * Defensive bound on the favorites list. The registry ships far fewer tools
+ * than this, so the cap only ever bites on a corrupt or hand-edited store.
+ */
+export const FAVORITE_LIMIT = 32;
+
+/** Shared "no favorites" value; frozen so a caller cannot mutate the default. */
+const NO_FAVORITES: readonly string[] = Object.freeze([]);
+
 export const DEFAULT_SETTINGS: AppSettings = {
   theme: 'system',
   historyEnabled: true,
   historyRetentionLimit: DEFAULT_HISTORY_RETENTION,
   dohProvider: 'cloudflare',
   customDohUrl: '',
+  favoriteToolIds: NO_FAVORITES,
+  onboardingDismissed: false,
 };
 
 export function parseTheme(raw: string | null): ThemePreference {
@@ -61,6 +74,37 @@ export function parseDohProvider(raw: string | null): DohProviderId {
   return DEFAULT_SETTINGS.dohProvider;
 }
 
+/**
+ * Coerce an arbitrary value into a usable favorites list: strings only,
+ * trimmed, deduped, original order kept, capped at FAVORITE_LIMIT.
+ */
+function normaliseFavoriteIds(value: unknown): readonly string[] {
+  if (!Array.isArray(value)) return NO_FAVORITES;
+  const ids: string[] = [];
+  for (const entry of value) {
+    if (typeof entry !== 'string') continue;
+    const id = entry.trim();
+    if (id === '' || ids.includes(id)) continue;
+    ids.push(id);
+    if (ids.length === FAVORITE_LIMIT) break;
+  }
+  return ids.length === 0 ? NO_FAVORITES : ids;
+}
+
+/**
+ * Favorites are stored as a JSON array. Anything else — truncation, a value
+ * written by another build, a hand-edited key — degrades to an empty list
+ * rather than breaking the dashboard.
+ */
+export function parseFavoriteToolIds(raw: string | null): readonly string[] {
+  if (raw === null) return NO_FAVORITES;
+  try {
+    return normaliseFavoriteIds(JSON.parse(raw));
+  } catch {
+    return NO_FAVORITES;
+  }
+}
+
 export function readSettings(store: SettingsStore): AppSettings {
   return {
     theme: parseTheme(store.get(SETTINGS_KEYS.theme)),
@@ -71,6 +115,11 @@ export function readSettings(store: SettingsStore): AppSettings {
     historyRetentionLimit: parseRetention(store.get(SETTINGS_KEYS.historyRetentionLimit)),
     dohProvider: parseDohProvider(store.get(SETTINGS_KEYS.dohProvider)),
     customDohUrl: store.get(SETTINGS_KEYS.customDohUrl) ?? DEFAULT_SETTINGS.customDohUrl,
+    favoriteToolIds: parseFavoriteToolIds(store.get(SETTINGS_KEYS.favoriteToolIds)),
+    onboardingDismissed: parseBooleanSetting(
+      store.get(SETTINGS_KEYS.onboardingDismissed),
+      DEFAULT_SETTINGS.onboardingDismissed,
+    ),
   };
 }
 
@@ -91,6 +140,14 @@ export function writeSettings(store: SettingsStore, patch: Partial<AppSettings>)
       patch.dohProvider === undefined ? current.dohProvider : parseDohProvider(patch.dohProvider),
     customDohUrl:
       patch.customDohUrl === undefined ? current.customDohUrl : patch.customDohUrl.trim(),
+    favoriteToolIds:
+      patch.favoriteToolIds === undefined
+        ? current.favoriteToolIds
+        : normaliseFavoriteIds(patch.favoriteToolIds),
+    onboardingDismissed:
+      patch.onboardingDismissed === undefined
+        ? current.onboardingDismissed
+        : parseBooleanSetting(String(patch.onboardingDismissed), current.onboardingDismissed),
   };
 
   store.set(SETTINGS_KEYS.theme, next.theme);
@@ -98,5 +155,7 @@ export function writeSettings(store: SettingsStore, patch: Partial<AppSettings>)
   store.set(SETTINGS_KEYS.historyRetentionLimit, String(next.historyRetentionLimit));
   store.set(SETTINGS_KEYS.dohProvider, next.dohProvider);
   store.set(SETTINGS_KEYS.customDohUrl, next.customDohUrl);
+  store.set(SETTINGS_KEYS.favoriteToolIds, JSON.stringify(next.favoriteToolIds));
+  store.set(SETTINGS_KEYS.onboardingDismissed, String(next.onboardingDismissed));
   return next;
 }

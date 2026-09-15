@@ -1,7 +1,9 @@
 import { createMemorySettingsStore } from '../../../test-utils/memorySettingsStore';
 import {
   DEFAULT_SETTINGS,
+  FAVORITE_LIMIT,
   parseDohProvider,
+  parseFavoriteToolIds,
   RETENTION_MAX,
   RETENTION_MIN,
   SETTINGS_KEYS,
@@ -61,6 +63,8 @@ describe('reading and writing settings', () => {
       historyRetentionLimit: 120,
       dohProvider: 'google',
       customDohUrl: 'https://doh.example/q',
+      favoriteToolIds: [],
+      onboardingDismissed: false,
     });
     expect(readSettings(store)).toEqual(saved);
     expect(store.snapshot()).toEqual({
@@ -69,6 +73,8 @@ describe('reading and writing settings', () => {
       [SETTINGS_KEYS.historyRetentionLimit]: '120',
       [SETTINGS_KEYS.dohProvider]: 'google',
       [SETTINGS_KEYS.customDohUrl]: 'https://doh.example/q',
+      [SETTINGS_KEYS.favoriteToolIds]: '[]',
+      [SETTINGS_KEYS.onboardingDismissed]: 'false',
     });
   });
 
@@ -82,6 +88,8 @@ describe('reading and writing settings', () => {
       historyRetentionLimit: 50,
       dohProvider: 'google',
       customDohUrl: '',
+      favoriteToolIds: [],
+      onboardingDismissed: false,
     });
   });
 
@@ -123,6 +131,76 @@ describe('reading and writing settings', () => {
       historyRetentionLimit: RETENTION_MAX,
       dohProvider: DEFAULT_SETTINGS.dohProvider,
       customDohUrl: '',
+      favoriteToolIds: [],
+      onboardingDismissed: false,
     });
+  });
+});
+
+describe('dashboard favorites and onboarding', () => {
+  it('defaults to no favorites and an undismissed onboarding card', () => {
+    const settings = readSettings(createMemorySettingsStore());
+    expect(settings.favoriteToolIds).toEqual([]);
+    expect(settings.onboardingDismissed).toBe(false);
+  });
+
+  it('round-trips favorites and the onboarding flag through the store', () => {
+    const store = createMemorySettingsStore();
+    const saved = writeSettings(store, {
+      favoriteToolIds: ['subnet-calculator', 'dns-lookup'],
+      onboardingDismissed: true,
+    });
+    expect(saved.favoriteToolIds).toEqual(['subnet-calculator', 'dns-lookup']);
+    expect(saved.onboardingDismissed).toBe(true);
+    expect(readSettings(store)).toEqual(saved);
+    expect(store.snapshot()[SETTINGS_KEYS.favoriteToolIds]).toBe(
+      JSON.stringify(['subnet-calculator', 'dns-lookup']),
+    );
+    expect(store.snapshot()[SETTINGS_KEYS.onboardingDismissed]).toBe('true');
+  });
+
+  it('trims, dedupes and drops non-strings from a favorites write', () => {
+    const store = createMemorySettingsStore();
+    const dirty = [
+      ' dns-lookup ',
+      'dns-lookup',
+      '',
+      '   ',
+      42,
+      null,
+      'tcp-ping',
+    ] as unknown as string[];
+    expect(writeSettings(store, { favoriteToolIds: dirty }).favoriteToolIds).toEqual([
+      'dns-lookup',
+      'tcp-ping',
+    ]);
+  });
+
+  it('caps the favorites list', () => {
+    const store = createMemorySettingsStore();
+    const ids = Array.from({ length: FAVORITE_LIMIT + 5 }, (_, index) => `tool-${index}`);
+    expect(writeSettings(store, { favoriteToolIds: ids }).favoriteToolIds).toHaveLength(
+      FAVORITE_LIMIT,
+    );
+  });
+
+  it('degrades a corrupt favourites value to an empty list', () => {
+    const corrupt = ['not json', '"dns-lookup"', '{"a":1}', 'null', '5', '[1,2]'];
+    for (const raw of corrupt) {
+      const store = createMemorySettingsStore({ [SETTINGS_KEYS.favoriteToolIds]: raw });
+      expect(readSettings(store).favoriteToolIds).toEqual([]);
+    }
+    expect(parseFavoriteToolIds(null)).toEqual([]);
+  });
+
+  it('keeps ids this build does not ship and undismisses a garbage flag', () => {
+    // Existence is checked by the dashboard, not here: a tool can come back in a
+    // later build, and the data layer must not pretend to know the registry.
+    const store = createMemorySettingsStore({
+      [SETTINGS_KEYS.favoriteToolIds]: JSON.stringify(['dns-lookup', 'ghost-tool']),
+      [SETTINGS_KEYS.onboardingDismissed]: 'maybe',
+    });
+    expect(readSettings(store).favoriteToolIds).toEqual(['dns-lookup', 'ghost-tool']);
+    expect(readSettings(store).onboardingDismissed).toBe(false);
   });
 });

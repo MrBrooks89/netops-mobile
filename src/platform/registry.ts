@@ -104,8 +104,31 @@ export function getCapabilities(): CapabilityMap {
   };
 }
 
-/** True when every listed capability is available in this build. */
-export function hasCapabilities(ids: readonly (keyof CapabilityMap)[]): boolean {
-  const available = getCapabilities();
+/**
+ * True when every listed capability is present in `available`.
+ *
+ * Takes the map rather than fetching it, so a screen or list resolves
+ * `getCapabilities()` **once** per render and every helper below agrees on the
+ * same snapshot.
+ */
+export function hasCapabilities(
+  available: CapabilityMap,
+  ids: readonly (keyof CapabilityMap)[],
+): boolean {
   return ids.every((id) => available[id] !== null);
+}
+
+/**
+ * The subset of `ids` that `available` cannot provide, in the order given.
+ *
+ * The tool route uses this to render the degraded-state card (plan §6.4)
+ * instead of mounting a screen whose every action would fail; the dashboard
+ * uses it to mark the tool before the user taps it. Availability stays data:
+ * nothing here branches on the operating system.
+ */
+export function missingCapabilities<T extends keyof CapabilityMap>(
+  available: CapabilityMap,
+  ids: readonly T[],
+): T[] {
+  return ids.filter((id) => available[id] === null);
 }

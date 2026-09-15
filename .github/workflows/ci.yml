@@ -29,6 +29,10 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      # Availability must stay data: no Platform.OS outside src/platform/** (M8).
+      - name: Platform-leak check
+        run: pnpm check:platform
+
       - name: Format check
         run: pnpm format:check
 

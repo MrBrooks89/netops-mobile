@@ -48,6 +48,7 @@
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
+    "check:platform": "node scripts/check-platform-leaks.mjs",
     "format": "prettier --write \"src/**/*\" \"app/**/*\" \"__mocks__/**/*\" \"*.{ts,tsx,js,mjs,json}\" \".github/**/*\"",
     "format:check": "prettier --check \"src/**/*\" \"app/**/*\" \"__mocks__/**/*\" \"*.{ts,tsx,js,mjs,json}\" \".github/**/*\"",
     "test": "jest",

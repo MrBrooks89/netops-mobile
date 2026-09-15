@@ -20,3 +20,5 @@ export type { NoteTone } from './primitives';
 export { Button, Chip, Field } from './inputs';
 export { CopyableValue } from './CopyableValue';
 export { OperationStatus } from '../OperationStatus';
+export { UnavailableState } from './UnavailableState';
+export type { UnavailableKind } from './UnavailableState';

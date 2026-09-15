@@ -81,6 +81,22 @@ describe('Dashboard', () => {
     expect(utils.queryByTestId('onboarding-card')).toBeNull();
   });
 
+  it('marks tools this build cannot run, and only those', async () => {
+    const utils = await renderWithApp(<Dashboard />, {
+      appSettings: { onboardingDismissed: true },
+    });
+
+    // jest-expo runs as iOS, so the real capability registry reports every
+    // native-backed tool as missing — the exact "bare iOS build" state M8 is
+    // about. The row says so before the user taps it.
+    expect(utils.getByTestId('browse-unavailable-port-scanner')).toBeTruthy();
+    expect(utils.getByTestId('browse-unavailable-lan-discovery')).toBeTruthy();
+    // Pure tools are not marked…
+    expect(utils.queryByTestId('browse-unavailable-subnet-calculator')).toBeNull();
+    // …and neither are the fetch-based DNS tools.
+    expect(utils.queryByTestId('browse-unavailable-dns-lookup')).toBeNull();
+  });
+
   it('pins a tool from the browse list and unpins it from Favorites', async () => {
     const utils = await renderWithApp(<Dashboard />, {
       appSettings: { onboardingDismissed: true },

@@ -15,6 +15,8 @@ import { Button, Card, Screen, StyledText, useTheme } from '../../src/ui/compone
 import { getTool, toolsByCategory } from '../../src/core/registry/registry';
 import { TOOL_CATEGORY_LABELS, type ToolModule } from '../../src/core/registry/types';
 import { useAppData, useAppSettings } from '../../src/providers/AppProviders';
+import { isToolAvailable } from '../../src/features/_shared/CapabilityGate';
+import { getCapabilities } from '../../src/platform/registry';
 
 /** Distinct tools shown in the Recent section. */
 const RECENT_LIMIT = 5;
@@ -35,6 +37,9 @@ export default function Dashboard() {
   const { settings, updateSettings } = useAppSettings();
   const [recentToolIds, setRecentToolIds] = useState<readonly string[]>([]);
   const grouped = toolsByCategory();
+  // One capability snapshot for the whole list (each row asks it the same
+  // question, and the map is rebuilt on every call).
+  const available = getCapabilities();
 
   // Recent is derived from persisted runs, so it reloads whenever the tab
   // regains focus: running a tool from here and coming back must update it.
@@ -74,6 +79,7 @@ export default function Dashboard() {
       tool={tool}
       section={section}
       favorite={settings.favoriteToolIds.includes(tool.id)}
+      unavailable={!isToolAvailable(tool, available)}
       onOpen={() => router.push(`/tool/${tool.id}`)}
       onToggleFavorite={toggleFavorite}
     />
@@ -149,6 +155,7 @@ function ToolRow({
   tool,
   section,
   favorite,
+  unavailable,
   onOpen,
   onToggleFavorite,
 }: {
@@ -156,6 +163,8 @@ function ToolRow({
   /** Where the row is rendered; keeps testIDs unique when a tool is listed twice. */
   section: 'favorite' | 'recent' | 'browse';
   favorite: boolean;
+  /** This build lacks a capability the tool declares (plan §6.4). */
+  unavailable: boolean;
   onOpen: () => void;
   onToggleFavorite: (id: string) => void;
 }) {
@@ -176,10 +185,23 @@ function ToolRow({
           color={theme.colors.primary}
           style={styles.toolIcon}
         />
-        <StyledText style={styles.toolTitle}>{tool.title}</StyledText>
-        <StyledText dim style={styles.toolDesc} numberOfLines={1}>
-          {tool.description}
+        <StyledText style={[styles.toolTitle, unavailable && { color: theme.colors.textDim }]}>
+          {tool.title}
         </StyledText>
+        {unavailable ? (
+          <StyledText
+            dim
+            style={styles.toolDesc}
+            numberOfLines={1}
+            testID={`${section}-unavailable-${tool.id}`}
+          >
+            Not available in this build
+          </StyledText>
+        ) : (
+          <StyledText dim style={styles.toolDesc} numberOfLines={1}>
+            {tool.description}
+          </StyledText>
+        )}
       </Pressable>
       <Pressable
         onPress={() => onToggleFavorite(tool.id)}

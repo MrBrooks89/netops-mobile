@@ -41,7 +41,7 @@ enum IcmpPing {
     defer { close(descriptor) }
 
     let identifier = UInt16(truncatingIfNeeded: getpid())
-    var packet = echoRequest(identifier: identifier, sequence: 1)
+    let packet = echoRequest(identifier: identifier, sequence: 1)
     let sent = packet.withUnsafeBytes { buffer -> Int in
       sendto(
         descriptor,

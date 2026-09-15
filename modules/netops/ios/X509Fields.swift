@@ -164,14 +164,14 @@ enum X509Fields {
       let attributes = SecKeyCopyAttributes(key) as? [String: Any]
     else { return "" }
 
+    // RSA and EC only: `kSecAttrKeyTypeDSA` is macOS-only, so an unexpected
+    // value is reported as-is rather than guessed.
     let raw = attributes[kSecAttrKeyType as String] as? String ?? ""
     let type: String
     if raw == kSecAttrKeyTypeRSA as String {
       type = "RSA"
     } else if raw == kSecAttrKeyTypeEC as String {
       type = "EC"
-    } else if raw == kSecAttrKeyTypeDSA as String {
-      type = "DSA"
     } else {
       type = raw.isEmpty ? "Unknown" : raw
     }
@@ -268,7 +268,7 @@ enum X509Fields {
 
     /** GeneralNames ::= SEQUENCE OF GeneralName (context-tagged alternatives). */
     static func generalNames(from bytes: [UInt8]) -> [String] {
-      var reader = DerReader(bytes: bytes)
+      let reader = DerReader(bytes: bytes)
       guard let names = reader.readConstructed() else { return [] }
       var values: [String] = []
       for element in names.readAll() {

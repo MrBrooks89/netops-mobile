@@ -413,7 +413,8 @@ Declared in `app.config.ts` (CNG) — **only when the milestone that needs them 
 | `ACCESS_NETWORK_STATE` | netinfo, HTTP/DNS probes | M3 | normal |
 | `ACCESS_WIFI_STATE` | Wi-Fi basics | M5 | normal; **not sufficient for SSID** |
 | `ACCESS_FINE_LOCATION` (+ `ACCESS_COARSE_LOCATION`) | SSID/BSSID, Wi-Fi channel/frequency | M5 | **runtime**; Android 8.1+ requires fine location; Android 9+ also requires Location Services **enabled** — UX must explain this (classic "why does a network tool need location?" moment) |
-| `CHANGE_WIFI_MULTICAST_STATE` | mDNS/SSDP receive during LAN discovery | M7 | acquire `MulticastLock` only while scanning, release immediately |
+| `CHANGE_WIFI_MULTICAST_STATE` | mDNS/SSDP receive during LAN discovery | M7 ✅ | normal; declared in `modules/netops/android/src/main/AndroidManifest.xml`; `MulticastLock` acquired only while the browse runs, released immediately |
+| `ACCESS_LOCAL_NETWORK` | every LAN tool once Local Network Protections are enforced | SDK 37 upgrade | **do not request at targetSdk 36** (legacy apps get an implicit grant via `INTERNET`); declare + request at runtime when raising targetSdk to 37 — see ADR-009 |
 | `POST_NOTIFICATIONS` | scan-complete notifications | deferred | skip until background work exists |
 
 Never needed: `READ_EXTERNAL_STORAGE` (Share sheet), `ACCESS_BACKGROUND_LOCATION`, `REQUEST_INSTALL_PACKAGES`, `FOREGROUND_SERVICE` (until background scans).
@@ -649,7 +650,7 @@ DoH resolver (Cloudflare/Google, custom URL in settings), A/AAAA/CNAME/MX/NS/TXT
 Raw-socket HTTP/1.1 client (status, headers, redirects chain, timing phases DNS/connect/TLS/TTFB/total) + `netops` TLS chain capture (subject/issuer/SANs/validity/serial/sig/key size/self-signed, expiry countdown).
 
 ### M7 — LAN discovery + dashboard polish (3–5 days)
-TCP sweep engine (bounded concurrency, ARP optional best-effort), optional mDNS via `NsdManager` (multicast lock held only during scan); discovered-hosts list with source badges, feed-forward into saved hosts / port scanner / ping; dashboard recents + favorites; onboarding copy (authorized use + privacy).
+TCP sweep engine (bounded concurrency; ARP dropped — unreachable for apps on Android 10+, ADR-008), optional mDNS via `NsdManager` (multicast lock held only during scan); discovered-hosts list with source badges, feed-forward into saved hosts / port scanner / ping; dashboard recents + favorites; onboarding copy (authorized use + privacy).
 
 ### M8 — iOS groundwork (audit + parity, not full port) (2–3 days + later device work)
 Capability parity audit vs §6 contracts; Swift halves implemented for whatever is feasible without macOS hardware (compile/type-check via CI mac runner or collaborator); Info.plist keys (Local Network usage, Bonjour services, ATS exceptions), entitlements list documented; degraded-state matrix tested (which tools run on a bare iOS build: calculators, ports, saved data, history, export, DoH DNS — everything except native-gated tools).
@@ -822,7 +823,7 @@ Each issue carries its milestone's acceptance criteria (§17/§18) as a checklis
 | D2 | `react-native-tcp-socket` health & New Architecture compat | (a) community lib (b) custom Expo module (~200 LOC) | Spike M4; **(a)** if maintained, else (b); custom module is small — TCP client is trivial in Kotlin/Swift | M4 spike (#29) |
 | D3 | DNS strategy | (a) DoH-only (b) native resolver from start | **(a) DoH-only for M3**; `DnsServerRef{kind:'system'}` in the interface reserves (b). Document split-horizon limitation in-tool | Interface frozen at M3; native later |
 | D4 | ICMP reality | (a) require native ICMP (b) TCP-ping default + ICMP best-effort | **(b)** — honest, cross-platform, no SELinux fights; UI labels methods clearly | M5 design |
-| D5 | LAN discovery approach | (a) TCP sweep only (b) + mDNS (c) ARP-table read | **(a) primary, (b) optional, (c) best-effort only** (ARP blocked on Android 10+; iOS has neither) | M7; architecture allows all three as sources |
+| D5 | LAN discovery approach | (a) TCP sweep only (b) + mDNS (c) ARP-table read | **(a) primary, (b) optional, (c) dropped** — ARP is unreadable for apps on Android 10+ and absent on iOS, so it shipped in neither form (ADR-008); `mergeLanHits` still unions any source set, so a future source is additive | Resolved M7 (ADR-008) |
 | D6 | UI kit | Paper vs styling-only (Tamagui/gluestack) vs primitives | **Paper**, wrapped in `ui/` tokens; swap cost contained by wrapper | M0 (low risk, reversible) |
 | D7 | ORM | Drizzle vs raw SQL repositories | **Raw SQL + typed repositories for MVP** (4 tables); revisit if queries grow joins | M2; revisit M4 |
 | D8 | State libs | Context-only vs zustand vs (+) React Query | **zustand M1, React Query M3** — calculators don't need query infra; networked ops do | M1/M3 |

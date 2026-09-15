@@ -6,6 +6,17 @@ import { toolError } from '../../core/result/toolError';
 import type { RunRecord } from '../../core/model/entities';
 import { useOperation, type OperationSpec } from './useOperation';
 
+// The module under test holds the screen awake while an operation runs; the
+// native calls are recorded so a test can assert the lock's lifetime.
+jest.mock('expo-keep-awake', () => ({
+  activateKeepAwakeAsync: jest.fn().mockResolvedValue(undefined),
+  deactivateKeepAwake: jest.fn(),
+}));
+const keepAwake = jest.requireMock('expo-keep-awake') as {
+  activateKeepAwakeAsync: jest.Mock;
+  deactivateKeepAwake: jest.Mock;
+};
+
 /** The automatic netinfo mock, with its test helpers. */
 const netinfo = NetInfo as unknown as {
   setConnected(value: boolean | null): void;
@@ -19,7 +30,11 @@ interface Output {
   readonly answers: string[];
 }
 
-beforeEach(() => netinfo.reset());
+beforeEach(() => {
+  netinfo.reset();
+  keepAwake.activateKeepAwakeAsync.mockClear();
+  keepAwake.deactivateKeepAwake.mockClear();
+});
 
 function makeSpec(overrides: Partial<OperationSpec<Input, Output>> = {}) {
   return {
@@ -166,5 +181,41 @@ describe('useOperation', () => {
       result.current.reset();
     });
     await waitFor(() => expect(result.current.data).toBeNull());
+  });
+});
+
+describe('keep-awake', () => {
+  it('holds the screen awake only while an operation runs', async () => {
+    let release: (() => void) | null = null;
+    const spec = makeSpec({
+      run: () =>
+        new Promise((resolve) => {
+          release = () => resolve(ok({ answers: ['1.2.3.4'] }));
+        }),
+    });
+    const { result } = await renderHookWithApp(() => useOperation(spec));
+
+    expect(keepAwake.activateKeepAwakeAsync).not.toHaveBeenCalled();
+
+    // The mutation becomes pending on a later tick, so the lock is asserted with
+    // waitFor; and the operation is always released in `finally`, because a
+    // never-settling mutation would leave Jest waiting on it forever.
+    try {
+      await act(async () => {
+        result.current.run({ name: 'example.com' });
+      });
+      await waitFor(() =>
+        expect(keepAwake.activateKeepAwakeAsync).toHaveBeenCalledWith('netops-operation'),
+      );
+      expect(keepAwake.deactivateKeepAwake).not.toHaveBeenCalled();
+      expect(result.current.isRunning).toBe(true);
+    } finally {
+      await act(async () => {
+        release?.();
+      });
+    }
+
+    await waitFor(() => expect(result.current.isRunning).toBe(false));
+    expect(keepAwake.deactivateKeepAwake).toHaveBeenCalledWith('netops-operation');
   });
 });

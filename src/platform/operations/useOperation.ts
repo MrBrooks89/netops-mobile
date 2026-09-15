@@ -13,14 +13,18 @@
  * that were then recovered from.
  */
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
+import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import type { RunStatus } from '../../core/model/entities';
 import type { ToolId } from '../../core/registry/types';
 import type { Result } from '../../core/result/result';
 import type { ToolError } from '../../core/result/toolError';
 import { useAppData, useAppSettings } from '../../providers/AppProviders';
 import { offlineToolError, useIsOffline } from '../netinfo';
+
+/** Keep-awake tag for every operation; one tag, so releases cannot mismatch. */
+const KEEP_AWAKE_TAG = 'netops-operation';
 
 export interface OperationContext {
   /** Aborted when the user cancels or the screen unmounts. */
@@ -175,6 +179,21 @@ export function useOperation<TInput, TOutput>(
 
   const error = mutation.error ?? null;
 
+  // A scan or sweep can take tens of seconds, and the default screen timeout is
+  // often shorter. Holding the screen awake while an operation runs is the
+  // pragmatic answer to "the app stopped when I put the phone down" without a
+  // foreground service (background work is out of scope, plan §10.8).
+  const isRunning = mutation.isPending;
+  useEffect(() => {
+    if (!isRunning) return;
+    // The imperative API rather than the `useKeepAwake` hook, because this is
+    // conditional: the lock exists only while the operation does.
+    void activateKeepAwakeAsync(KEEP_AWAKE_TAG);
+    return () => {
+      deactivateKeepAwake(KEEP_AWAKE_TAG);
+    };
+  }, [isRunning]);
+
   return {
     run,
     runAsync,
@@ -184,7 +203,7 @@ export function useOperation<TInput, TOutput>(
       mutation.reset();
       setDataInput(null);
     },
-    isRunning: mutation.isPending,
+    isRunning,
     data: mutation.data ?? null,
     dataInput,
     error,

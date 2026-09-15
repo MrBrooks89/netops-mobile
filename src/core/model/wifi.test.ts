@@ -50,12 +50,16 @@ describe('toWifiInfo', () => {
       frequencyMHz: 5180,
       rssi: -52,
       linkSpeedMbps: 866,
+      gateway: '192.168.1.1',
+      dnsServers: ['192.168.1.1', '1.1.1.1'],
       transportWifi: true,
       transportCellular: false,
       transportVpn: false,
       transportEthernet: false,
     };
     const info = toWifiInfo(raw);
+    expect(info.gateway).toBe('192.168.1.1');
+    expect(info.dnsServers).toEqual(['192.168.1.1', '1.1.1.1']);
     expect(info.ssid).toBe('HomeNet');
     expect(info.channel).toBe(36);
     expect(info.band).toBe('5 GHz');
@@ -82,6 +86,8 @@ describe('toWifiInfo', () => {
       frequencyMHz: null,
       rssi: -70,
       linkSpeedMbps: null,
+      gateway: null,
+      dnsServers: [],
       transportWifi: true,
       transportCellular: true,
       transportVpn: false,

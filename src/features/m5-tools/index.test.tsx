@@ -15,6 +15,7 @@ import { ok } from '../../core/result/result';
 import type { TcpPingReport } from '../../core/model/tcp';
 import type { IcmpPingReport } from '../../core/model/ping';
 import type { PermissionState } from '../../platform/permissions';
+import { toWifiInfo, type RawWifiInfo, type WifiInfo } from '../../core/model/wifi';
 
 jest.mock('../../platform/registry', () => ({
   getCapabilities: jest.fn(),
@@ -147,7 +148,7 @@ describe('PingScreen (unified)', () => {
 
 describe('WifiInfoScreen', () => {
   function withWifi(options: {
-    info?: ReturnType<typeof toInfoRaw> | null;
+    info?: WifiInfo | null;
     permission?: PermissionState;
     askResult?: PermissionState;
   }) {
@@ -170,22 +171,30 @@ describe('WifiInfoScreen', () => {
     } as unknown as CapabilityMap);
     return { getInfo, get, request };
   }
-  function toInfoRaw() {
-    return {
+  /**
+   * Built through `toWifiInfo` on purpose: the capability returns the mapped
+   * model, so a hand-written literal here silently drifts (and did — the
+   * gateway/DNS rows arrived later and the fixture did not).
+   */
+  function wifiInfoFixture(overrides: Partial<RawWifiInfo> = {}): WifiInfo {
+    return toWifiInfo({
       ssid: null,
       bssid: null,
       frequencyMHz: null,
       rssi: null,
       linkSpeedMbps: null,
+      gateway: null,
+      dnsServers: [],
       transportWifi: true,
       transportCellular: false,
       transportVpn: false,
       transportEthernet: false,
-    };
+      ...overrides,
+    });
   }
 
   it('renders unavailable rows (never blanks) when info fields are gated', async () => {
-    withWifi({ info: toInfoRaw(), permission: granted });
+    withWifi({ info: wifiInfoFixture(), permission: granted });
     const { findByTestId, getAllByText } = await renderWithApp(
       <WifiInfoScreen tool={tool('wifi-info', 'Wi-Fi Info')} />,
     );
@@ -195,9 +204,37 @@ describe('WifiInfoScreen', () => {
     expect(getAllByText(/unavailable — needs location permission/).length).toBeGreaterThan(0);
   });
 
+  it('shows the gateway and every DNS server the link reports', async () => {
+    withWifi({
+      info: wifiInfoFixture({
+        gateway: '192.168.1.1',
+        dnsServers: ['192.168.1.1', '2606:4700:4700::1111'],
+      }),
+      permission: granted,
+    });
+    const { findByTestId, getByText } = await renderWithApp(
+      <WifiInfoScreen tool={tool('wifi-info', 'Wi-Fi Info')} />,
+    );
+
+    await findByTestId('wifi-gateway');
+    expect(getByText('192.168.1.1')).toBeTruthy();
+    // IPv6 resolvers are carried through unchanged, and both are listed.
+    expect(getByText('192.168.1.1, 2606:4700:4700::1111')).toBeTruthy();
+  });
+
+  it('says the gateway and DNS are unavailable rather than blank when absent', async () => {
+    withWifi({ info: wifiInfoFixture(), permission: granted });
+    const { findByTestId, getAllByText } = await renderWithApp(
+      <WifiInfoScreen tool={tool('wifi-info', 'Wi-Fi Info')} />,
+    );
+
+    await findByTestId('wifi-gateway');
+    expect(getAllByText(/unavailable — not exposed on this platform/)).toHaveLength(2);
+  });
+
   it('shows the permission rationale card with Allow when not granted and askable', async () => {
     const mocks = withWifi({
-      info: toInfoRaw(),
+      info: wifiInfoFixture(),
       permission: { granted: false, canAskAgain: true, status: 'undetermined' },
     });
     const { getByTestId, getByText } = await renderWithApp(
@@ -212,7 +249,7 @@ describe('WifiInfoScreen', () => {
 
   it('deep-links to settings when the permission was permanently denied', async () => {
     withWifi({
-      info: toInfoRaw(),
+      info: wifiInfoFixture(),
       permission: { granted: false, canAskAgain: false, status: 'denied' },
     });
     const { getByTestId } = await renderWithApp(
@@ -239,7 +276,7 @@ describe('WifiInfoScreen', () => {
   });
 
   it('explains why a network tool asks for location', async () => {
-    withWifi({ info: toInfoRaw(), permission: granted });
+    withWifi({ info: wifiInfoFixture(), permission: granted });
     const { getByText } = await renderWithApp(
       <WifiInfoScreen tool={tool('wifi-info', 'Wi-Fi Info')} />,
     );

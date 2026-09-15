@@ -4,6 +4,7 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
 import android.net.ConnectivityManager
+import android.net.LinkProperties
 import android.net.NetworkCapabilities
 import android.net.nsd.NsdManager
 import android.net.nsd.NsdServiceInfo
@@ -462,12 +463,39 @@ class NetopsModule : Module() {
         null
       }
 
+      // Default gateway and DNS servers come from the active link's
+      // LinkProperties rather than WifiManager's DHCP info: that API is
+      // deprecated, is IPv4-only, and says nothing about an IPv6-only resolver.
+      // Both are best-effort — a VPN or a link without a default route yields
+      // nulls, which the screen renders as "unavailable" (plan §6.4).
+      val linkProperties: LinkProperties? = try {
+        connectivityManager.activeNetwork?.let { connectivityManager.getLinkProperties(it) }
+      } catch (e: Exception) {
+        null
+      }
+      // A link can have both an IPv4 and an IPv6 default route, and the
+      // platform may list either first. Prefer the IPv4 next hop — that is the
+      // address a user types into a browser or a config — and fall back to the
+      // IPv6 one on a v6-only link (device verification showed the emulator
+      // reporting fe80::2 first, which is correct but rarely what is wanted).
+      val defaultGateways: List<String> = linkProperties?.routes
+        ?.filter { it.isDefaultRoute }
+        ?.mapNotNull { it.gateway?.hostAddress }
+        ?: emptyList()
+      val gateway: String? = defaultGateways.firstOrNull { it.contains('.') }
+        ?: defaultGateways.firstOrNull()
+      val dnsServers: List<String> = linkProperties?.dnsServers
+        ?.mapNotNull { it.hostAddress }
+        ?: emptyList()
+
       return mapOf(
         "ssid" to ssid,
         "bssid" to bssid,
         "frequencyMHz" to frequencyMHz,
         "rssi" to rssi,
         "linkSpeedMbps" to linkSpeedMbps,
+        "gateway" to gateway,
+        "dnsServers" to dnsServers,
         "transportWifi" to (capabilities?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) == true),
         "transportCellular" to (capabilities?.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) == true),
         "transportVpn" to (capabilities?.hasTransport(NetworkCapabilities.TRANSPORT_VPN) == true),

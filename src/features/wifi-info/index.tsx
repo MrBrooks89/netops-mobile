@@ -214,6 +214,18 @@ export function WifiInfoScreen({ tool }: ToolScreenProps) {
             testID="wifi-link-speed"
           />
           <WifiRow
+            label="Gateway"
+            value={info.gateway}
+            unavailableReason="not exposed on this platform"
+            testID="wifi-gateway"
+          />
+          <WifiRow
+            label="DNS"
+            value={info.dnsServers.length > 0 ? info.dnsServers.join(', ') : null}
+            unavailableReason="not exposed on this platform"
+            testID="wifi-dns"
+          />
+          <WifiRow
             label="Transports"
             value={
               [

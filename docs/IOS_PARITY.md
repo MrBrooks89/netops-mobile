@@ -29,7 +29,7 @@ without auditing it breaks CI rather than quietly leaving this page stale.
 | `tcpPing` | device-verified (M4) | **built (sim)** | Same library. The ICMP *method* additionally needs `icmpPing`. |
 | `tcpScan` | device-verified (M4, 100 ports in 21 s) | **built (sim)** | Same library. Defaults stay conservative for review risk (D10). |
 | `icmpPing` | best-effort, device-verified (M5) | **built (sim)** | iOS: unprivileged ICMP datagram socket (the SimplePing approach) — honest reachability, and timing only where the kernel gives it. Label stays "best-effort" (D4). |
-| `wifiInfo` | device-verified (M5); SSID/BSSID need location + Location Services on | **built (sim), degraded** | iOS needs the `com.apple.developer.networking.wifi-info` entitlement **and** location authorisation for SSID/BSSID. Frequency and RSSI have no iOS equivalent → honest `null`s, rendered as "unavailable" rows (§6.4, D14). |
+| `wifiInfo` | device-verified (M5); SSID/BSSID need location + Location Services on | **built (sim), degraded** | iOS needs the `com.apple.developer.networking.wifi-info` entitlement **and** location authorisation for SSID/BSSID. Frequency, RSSI and link speed have no iOS equivalent, and the gateway/resolver list is behind non-public API (`dns_configuration_copy`), so all of those are honest `null`s/`[]`, rendered as "unavailable" rows (§6.4, D14). Android reads gateway and DNS from `LinkProperties` (device-verified: `10.0.2.2` / `10.0.2.3` on the emulator). |
 | `permissions` | typed flow via Expo Modules (M5) | **built (sim)** | iOS maps to `CLLocationManager` authorisation for the Wi-Fi scope. Same JSON shape, so screens are identical. |
 | `httpProbe` | device-verified (M6) | **built (sim)** | Raw sockets via the same TCP library. Cleartext targets need the ATS exception (ADR-007). |
 | `tlsInspect` | device-verified (M6) | **built (sim)** | iOS: `URLSession` trust challenge → `SecTrustCopyCertificateChain`. Display-only; no validation bypass exists anywhere (§16.7). |
@@ -56,7 +56,7 @@ gate checks.
 | `http-diagnostics` | `httpProbe` | **gated** | ATS exception is app-wide and deliberate (ADR-007). |
 | `tls-inspector` | `tlsInspect` | **gated** | Certificate chain is display-only; expiry countdown works offline. |
 | `lan-discovery` | `lanDiscovery` | **gated** | Prompt-free until the user starts a sweep; mDNS may need the Bonjour service list to match the browsed types. |
-| `wifi-info` | `wifiInfo` | **gated** | Entitlement + location; frequency/RSSI unavailable → nulls. |
+| `wifi-info` | `wifiInfo` | **gated** | Entitlement + location; frequency, RSSI, gateway and DNS are unavailable on iOS → nulls. |
 
 ### Why the tool table says "gated" while the capability table says "built (sim)"
 

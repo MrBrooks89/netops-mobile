@@ -27,6 +27,10 @@ export interface WifiInfoResult {
   /** Signal in dBm, null when gated or unknown. */
   readonly rssi: number | null;
   readonly linkSpeedMbps: number | null;
+  /** Default gateway of the active link (Android LinkProperties). */
+  readonly gateway: string | null;
+  /** DNS servers of the active link, in platform order. */
+  readonly dnsServers: readonly string[];
   readonly transportWifi: boolean;
   readonly transportCellular: boolean;
   readonly transportVpn: boolean;

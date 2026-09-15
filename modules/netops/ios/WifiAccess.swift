@@ -61,10 +61,15 @@ enum WifiAccess {
       var info = transportInfo
       info["ssid"] = NSNull()
       info["bssid"] = NSNull()
-      // No iOS API exposes these; null is the honest answer (see file header).
+      // No public iOS API exposes these; null is the honest answer (see file
+      // header). The gateway would need the default route (getifaddrs does not
+      // carry it) and the resolver list lives behind dns_configuration_copy,
+      // which is not public API — so neither is guessed.
       info["frequencyMHz"] = NSNull()
       info["rssi"] = NSNull()
       info["linkSpeedMbps"] = NSNull()
+      info["gateway"] = NSNull()
+      info["dnsServers"] = []
 
       guard locationAuthorization().isAuthorized else {
         // Without authorisation `NEHotspotNetwork` cannot return anything, and

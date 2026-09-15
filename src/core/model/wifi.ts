@@ -17,6 +17,10 @@ export interface RawWifiInfo {
   readonly frequencyMHz: number | null;
   readonly rssi: number | null;
   readonly linkSpeedMbps: number | null;
+  /** Default gateway of the active link, when the platform exposes it. */
+  readonly gateway: string | null;
+  /** DNS servers of the active link, in platform order. */
+  readonly dnsServers: readonly string[];
   readonly transportWifi: boolean;
   readonly transportCellular: boolean;
   readonly transportVpn: boolean;
@@ -54,6 +58,10 @@ export interface WifiInfo {
   /** Signal strength in dBm, negative; null when gated. */
   readonly rssi: number | null;
   readonly linkSpeedMbps: number | null;
+  /** Default gateway of the active link; null when the platform has none. */
+  readonly gateway: string | null;
+  /** Resolvers from the active link; empty when the platform has none. */
+  readonly dnsServers: readonly string[];
   readonly transportWifi: boolean;
   readonly transportCellular: boolean;
   readonly transportVpn: boolean;
@@ -76,6 +84,8 @@ export function toWifiInfo(raw: RawWifiInfo | null): WifiInfo {
     band: frequencyMHz !== null ? bandForFrequencyMHz(frequencyMHz) : null,
     rssi: raw?.rssi ?? null,
     linkSpeedMbps: raw?.linkSpeedMbps ?? null,
+    gateway: raw?.gateway ?? null,
+    dnsServers: raw?.dnsServers ?? [],
     transportWifi: raw?.transportWifi ?? false,
     transportCellular: raw?.transportCellular ?? false,
     transportVpn: raw?.transportVpn ?? false,

@@ -12,7 +12,8 @@
 #   3. a native-gated tool renders its screen rather than the degraded-state
 #      card — i.e. the native module survived R8 and the manifest kept its
 #      permissions,
-#   4. a pure tool renders its report.
+#   4. a pure tool renders its report,
+#   5. the TCP socket path completes an attempt without crashing (R8 check).
 #
 # Run it with Metro stopped for an airtight check (a release build never looks
 # for a dev server, but a listening port 8081 cannot then hide a mistake).
@@ -25,19 +26,29 @@ APK="${1:-$ROOT/android/app/build/outputs/apk/release/app-release.apk}"
 SETTLE_SECONDS="${SETTLE_SECONDS:-12}"
 UI_XML="/sdcard/netops-smoke-ui.xml"
 
-if [[ ! -f "$APK" ]]; then
-  echo "android-release-smoke: no APK at $APK" >&2
-  echo "build one first: (cd android && ./gradlew assembleRelease)" >&2
-  exit 1
-fi
-
 if [[ -n "${ANDROID_HOME:-}" && -x "$ANDROID_HOME/platform-tools/adb" ]]; then
   ADB="$ANDROID_HOME/platform-tools/adb"
 else
   ADB="$(command -v adb || true)"
 fi
+
+# When no APK was named, prefer the split that matches the attached device and
+# fall back to the universal build (which runs anywhere, and is 2.6x bigger).
+if [[ $# -eq 0 ]]; then
+  DEVICE_ABI="$("$ADB" shell getprop ro.product.cpu.abi 2>/dev/null | tr -d '\r' || true)"
+  SPLIT="$ROOT/android/app/build/outputs/apk/release/app-${DEVICE_ABI}-release.apk"
+  if [[ -n "$DEVICE_ABI" && -f "$SPLIT" ]]; then
+    APK="$SPLIT"
+  fi
+fi
 if [[ -z "$ADB" ]]; then
   echo "android-release-smoke: adb not found (set ANDROID_HOME or put adb on PATH)" >&2
+  exit 1
+fi
+
+if [[ ! -f "$APK" ]]; then
+  echo "android-release-smoke: no APK at $APK" >&2
+  echo "build one first: (cd android && ./gradlew assembleRelease)" >&2
   exit 1
 fi
 
@@ -61,6 +72,23 @@ screen() {
 # Case-insensitive on purpose: RN's `textTransform: 'uppercase'` changes the
 # rendered text of section titles ("CURRENT CONNECTION"), and the accessibility
 # tree reports what is rendered, not what the source says.
+# Press a testID. The accessibility tree is the only handle a script has, so the
+# node's bounds are read back and its centre tapped.
+tap_id() {
+  local id="$1" node bounds
+  "$ADB" shell uiautomator dump "$UI_XML" >/dev/null 2>&1 || true
+  # `|| true` because `grep -m1` closes the pipe early, and with `pipefail` that
+  # SIGPIPE would abort the whole script.
+  node="$("$ADB" shell cat "$UI_XML" 2>/dev/null | tr '>' '\n' | grep -m1 "resource-id=\"$id\"" || true)"
+  bounds="$(sed -E 's/.*bounds="\[([0-9]+),([0-9]+)\]\[([0-9]+),([0-9]+)\].*/\1 \2 \3 \4/' <<<"$node")"
+  if [[ -z "$bounds" || "$bounds" == "$node" ]]; then
+    echo "android-release-smoke: could not find $id to tap" >&2
+    return 1
+  fi
+  read -r x1 y1 x2 y2 <<<"$bounds"
+  "$ADB" shell input tap "$(((x1 + x2) / 2))" "$(((y1 + y2) / 2))"
+}
+
 expect() {
   local what="$1" needle="$2" haystack="$3"
   if ! grep -qiF -- "$needle" <<<"$haystack"; then
@@ -117,6 +145,22 @@ sleep 6
 IPV6="$(screen)"
 expect "pure tool renders its report" "Prefix mask" "$IPV6"
 expect "report has real values" "2001:db8:abcd:12::" "$IPV6"
+
+# 5. TCP path: react-native-tcp-socket must survive R8 as well. The verdict
+# depends on the host, so the assertion is that the attempt *completed* — the
+# result card names host:port whatever the outcome — and that nothing crashed.
+"$ADB" shell am start -a android.intent.action.VIEW -d "netops://tool/tcp-connect?host=10.0.2.2" >/dev/null 2>&1
+sleep 5
+tap_id tcp-connect-submit
+sleep 8
+TCP="$(screen)"
+expect "TCP tool completed a connect attempt" "10.0.2.2:443" "$TCP"
+if [[ -z "$("$ADB" shell pidof "$PKG" | tr -d '\r')" ]]; then
+  echo "android-release-smoke: the app died during the TCP attempt (R8 or socket library)" >&2
+  "$ADB" logcat -d -b crash | tail -30 >&2 || true
+  exit 1
+fi
+echo "android-release-smoke: ok — app survived a TCP attempt"
 
 "$ADB" shell am force-stop "$PKG" || true
 echo "android-release-smoke: ok"

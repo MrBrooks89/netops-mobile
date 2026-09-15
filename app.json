@@ -43,9 +43,7 @@
       "package": "tech.mrbrooks.netops",
       "versionCode": 1,
       "allowBackup": false,
-      "blockedPermissions": [
-        "android.permission.SYSTEM_ALERT_WINDOW"
-      ]
+      "blockedPermissions": ["android.permission.SYSTEM_ALERT_WINDOW"]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -54,7 +52,17 @@
       "expo-router",
       "expo-sqlite",
       "expo-sharing",
-      "./plugins/withCleartext"
+      "./plugins/withCleartext",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableMinifyInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true
+          }
+        }
+      ],
+      "./plugins/withAbiSplits"
     ]
   }
 }

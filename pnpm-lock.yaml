@@ -20,6 +20,9 @@ importers:
       expo:
         specifier: ~57.0.21
         version: 57.0.21(f501070a8185f02808d77e00a0e53d26)
+      expo-build-properties:
+        specifier: ~57.0.18
+        version: 57.0.18(expo@57.0.21)
       expo-clipboard:
         specifier: ~57.0.2
         version: 57.0.2(expo@57.0.21)(react-native@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/jest-preset@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1))(@react-native/metro-config@0.87.1(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)
@@ -2578,6 +2581,11 @@ packages:
       expo: '*'
       react: '*'
       react-native: '*'
+
+  expo-build-properties@57.0.18:
+    resolution: {integrity: sha512-puMjoYdYnLkxtla1gR5cqF0OoSEyUwc+1oCzDDESBYrqEyOhpGmj0HbKHgA5Rlu2CNKcHuxSGQA96/mipiM63Q==}
+    peerDependencies:
+      expo: '*'
 
   expo-clipboard@57.0.2:
     resolution: {integrity: sha512-VB4Au8X/RbvJKUtJk+87vdtveWSNEa5RzY3ooeO6VNF7Rd49RbQXZOu3/TfEW9p7mU8TCfyTvjyCiAUwSoSJ4w==}
@@ -8296,6 +8304,13 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
       - typescript
+
+  expo-build-properties@57.0.18(expo@57.0.21):
+    dependencies:
+      '@expo/schema-utils': 57.0.2
+      expo: 57.0.21(f501070a8185f02808d77e00a0e53d26)
+      resolve-from: 5.0.0
+      semver: 7.8.5
 
   expo-clipboard@57.0.2(expo@57.0.21)(react-native@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/jest-preset@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1))(@react-native/metro-config@0.87.1(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3):
     dependencies:

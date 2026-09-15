@@ -7,6 +7,7 @@
     "@react-native-community/netinfo": "12.0.1",
     "@tanstack/react-query": "^5.102.8",
     "expo": "~57.0.21",
+    "expo-build-properties": "~57.0.18",
     "expo-clipboard": "~57.0.2",
     "expo-constants": "^57.0.17",
     "expo-dev-client": "~57.0.18",
@@ -50,8 +51,8 @@
     "lint": "eslint .",
     "check:platform": "node scripts/check-platform-leaks.mjs",
     "check:ios-plist": "node scripts/check-ios-plist.mjs",
-    "format": "prettier --write \"src/**/*\" \"scripts/**/*\" \"app/**/*\" \"__mocks__/**/*\" \"*.{ts,tsx,js,mjs,json}\" \".github/**/*\"",
-    "format:check": "prettier --check \"src/**/*\" \"scripts/**/*\" \"app/**/*\" \"__mocks__/**/*\" \"*.{ts,tsx,js,mjs,json}\" \".github/**/*\"",
+    "format": "prettier --write \"src/**/*\" \"scripts/**/*\" \"plugins/**/*\" \"app/**/*\" \"__mocks__/**/*\" \"*.{ts,tsx,js,mjs,json}\" \".github/**/*\"",
+    "format:check": "prettier --check \"src/**/*\" \"scripts/**/*\" \"plugins/**/*\" \"app/**/*\" \"__mocks__/**/*\" \"*.{ts,tsx,js,mjs,json}\" \".github/**/*\"",
     "test": "jest",
     "test:coverage": "jest --coverage",
     "test:watch": "jest --watch"
